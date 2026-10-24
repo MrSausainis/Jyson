@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.github.com https://upiadmvxzphegivqszvp.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
+<meta name="color-scheme" content="dark" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<meta name="description" content="Jyson AI is a Windows desktop AI assistant with voice control, a Dynamic Island-style overlay, local or cloud AI, desktop actions, timers, Spotify controls and optional productivity tools." />
+<meta name="theme-color" content="#05080d" />
+<meta property="og:title" content="Jyson AI — desktop AI assistant for Windows" />
+<meta property="og:description" content="Voice, chat and desktop control without living in a browser tab." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://get-jyson.netlify.app/" />
+<link rel="canonical" href="https://get-jyson.netlify.app/" />
+<title>Jyson AI — desktop AI assistant for Windows</title>
+<link rel="stylesheet" href="site.css" />
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<header class="site-header">
+  <div class="shell">
+    <a class="brand" href="index.html" aria-label="Jyson AI home">
+      <span class="brand-mark">AI</span>
+      <span class="brand-word">Jyson AI</span>
+      <span class="brand-version" id="versionBadge">latest release</span>
+    </a>
+    <nav class="header-nav" aria-label="Primary navigation">
+      <a href="#product">Product</a>
+      <a href="#before-download">Before download</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="support.html">Support</a>
+    </nav>
+    <div class="header-actions">
+      <a class="btn btn-secondary" href="account.html">Account</a>
+      <a class="btn btn-primary" href="https://github.com/MrSausainis/Jyson/releases/latest/download/Jyson-AI-Setup.exe">Download</a>
+    </div>
+  </div>
+</header>
+
+<main id="main-content">
+  <section class="hero">
+    <div class="shell hero-grid">
+      <div>
+        <div class="eyebrow"><span class="eyebrow-line"></span><span>Windows desktop assistant</span></div>
+        <h1>Your AI should live on your <span>desktop.</span></h1>
+        <p class="hero-copy">Jyson AI combines voice, chat and PC control in one Windows app. It can stay compact in a Dynamic Island-style overlay, open into a full conversation when needed, and run with cloud or optional local AI.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://github.com/MrSausainis/Jyson/releases/latest/download/Jyson-AI-Setup.exe">Download for Windows</a>
+          <a class="btn btn-secondary" href="#before-download">Check requirements</a>
+        </div>
+        
+        <div class="hero-meta">
+          <span>Windows 10 / 11</span>
+          <span>Free to try</span>
+          <span>No account required for the basic app</span>
+        </div>
+      </div>
+
+      <div class="product-stage" aria-label="Jyson desktop interface illustration">
+        <div class="stage-halo"></div>
+        <div class="stage-orbit"></div>
+        <div class="stage-window">
+          <div class="stage-titlebar">
+            <div class="window-dots"><span></span><span></span><span></span></div>
+            <span>JYSON / DESKTOP</span>
+          </div>
+          <div class="stage-content">
+            <div class="dynamic-island">
+              <span class="island-light"></span>
+              <span class="island-wave"><i></i><i></i><i></i><i></i><i></i></span>
+              <span>Listening</span>
+            </div>
+            <div class="mock-chat">
+              <div class="mock-row user">Jyson, open Spotify and play Bohemian Rhapsody.</div>
+              <div class="mock-row">Spotify opened. Playing Bohemian Rhapsody by Queen.</div>
+            </div>
+            <div class="mock-status-grid">
+              <div class="mock-status"><span>ACTIVE MODEL</span><b>CLOUD</b></div>
+              <div class="mock-status"><span>GUARDIAN</span><b>ACTIVE</b></div>
+            </div>
+          </div>
+        </div>
+        <div class="floating-widget widget-one">TIMER<strong>12:48 remaining</strong></div>
+        <div class="floating-widget widget-two">DESKTOP ACTION<strong>Spotify ready</strong></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="product">
+    <div class="shell">
+      <div class="section-head">
+        <div class="section-kicker">What it actually does</div>
+        <h2>Useful when it can act, quiet when it has nothing to show.</h2>
+        <p>The core experience is deliberately small: talk or type, let Jyson AI handle the task, then get your screen back.</p>
+      </div>
+      <div class="capability-list">
+        <article class="capability-row">
+          <h3>Voice + chat</h3>
+          <p>Use the wake word for hands-free commands or open the full chat window for longer conversations. Conversation history and long-term memory are kept as separate systems.</p>
+          <div class="capability-tag">CORE</div>
+        </article>
+        <article class="capability-row">
+          <h3>Desktop control</h3>
+          <p>Launch and close apps, work with windows and files, set timers, inspect system state, and use guarded actions that ask before doing something risky.</p>
+          <div class="capability-tag">WINDOWS</div>
+        </article>
+        <article class="capability-row">
+          <h3>Dynamic Island</h3>
+          <p>A compact overlay shows only relevant state such as listening, media, timers and action results. It supports multi-monitor setups without becoming a second chat window.</p>
+          <div class="capability-tag">OVERLAY</div>
+        </article>
+        <article class="capability-row">
+          <h3>Cloud or local inference</h3>
+          <p>Choose where the main AI model runs. Local inference can still use configured cloud services or cloud fallback; it does not enable the separate Local-only privacy setting. See <a href="privacy.html#desktop-modes">desktop privacy modes</a>. Local models download only when you choose them.</p>
+          <div class="capability-tag">YOUR CHOICE</div>
+        </article>
+        <article class="capability-row">
+          <h3>Media + productivity</h3>
+          <p>Spotify playback controls are built in, while optional plan features can add Office automation, streamer tools and other integrations.</p>
+          <div class="capability-tag">OPTIONAL TOOLS</div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="before-download">
+    <div class="shell">
+      <div class="section-head">
+        <div class="section-kicker">Before you download</div>
+        <h2>The things worth knowing before you install it.</h2>
+      </div>
+      <div class="preflight">
+        <div class="preflight-panel">
+          <h3>Requirements and setup</h3>
+          <div class="fact-list">
+            <div class="fact"><div><strong>Windows 10 or 11.</strong> Jyson AI is a Windows desktop application.</div></div>
+            <div class="fact"><div><strong>The installer is lightweight.</strong> Local AI model files are separate and are not downloaded unless you enable Local AI.</div></div>
+            <div class="fact"><div><strong>Cloud AI needs your own API key.</strong> Groq is the current recommended setup; keys are configured inside Jyson AI, not on this website.</div></div>
+            <div class="fact"><div><strong>Local AI benefits from a capable GPU.</strong> It is optional, so it does not affect normal installation.</div></div>
+            <div class="fact"><div><strong>Local inference is not Local-only.</strong> Use the separate Local-only privacy setting to block cloud AI, voice and web-search requests. It is not a switch that disconnects the entire app from the internet.</div></div>
+          </div>
+        </div>
+        <div class="preflight-panel">
+          <h3>Accounts, data and payment</h3>
+          <div class="fact-list">
+            <div class="fact"><div><strong>You can try the app without an account.</strong> An account is used for plan access, account settings and synced appearance preferences.</div></div>
+            <div class="fact"><div><strong>Your AI provider usage is yours.</strong> Jyson AI does not bundle hidden shared API usage into the installer.</div></div>
+            <div class="fact"><div><strong>Paid plans are optional.</strong> They unlock additional tools and plan features; checkout is handled by Stripe.</div></div>
+            <div class="fact"><div><strong>Current builds are not code-signed.</strong> Windows SmartScreen may warn the first time you run the installer.</div></div>
+          </div>
+          <div class="notice">Installer source: official GitHub release for this repository. Avoid copies hosted elsewhere. Current builds are unsigned; see <a href="security.html#downloads">download security</a> before installing.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="reviews">
+    <div class="shell">
+      <div class="section-head">
+        <div class="section-kicker">User reviews</div>
+        <h2>Feedback from real Jyson AI accounts.</h2>
+      </div>
+      <div class="review-strip" id="reviewsGrid">
+        <p class="reviews-empty">Loading reviews…</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="final-cta">
+    <div class="shell">
+      <div class="final-panel">
+        <div>
+          <h2>Install it, then decide if it earns a place on your desktop.</h2>
+          <p>No account is required for the basic app. Paid features can be added later from your account.</p>
+        </div>
+        <div class="final-actions">
+          <a class="btn btn-secondary" href="account.html">Open account</a>
+          <a class="btn btn-primary" href="https://github.com/MrSausainis/Jyson/releases/latest/download/Jyson-AI-Setup.exe">Download Jyson AI</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="shell">
+    <span>Jyson AI · independent Windows software project</span>
+    <div class="footer-links">
+      <a href="account.html">Account</a>
+      <a href="https://github.com/MrSausainis/Jyson/releases">Releases</a>
+      <a href="support.html">Support</a>
+      <a href="mailto:jysenai.support@gmail.com">jysenai.support@gmail.com</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="refunds.html">Refunds</a>
+      <a href="cookies.html">Tracking</a>
+      <a href="security.html">Security</a>
+      <a href="accessibility.html">Accessibility</a>
+      <a href="donate.html">Support the project</a>
+    </div>
+  </div>
+</footer>
+
+<script src="site.js" defer></script>
+</body>
+</html>
+

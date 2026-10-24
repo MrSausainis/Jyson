@@ -1,0 +1,7 @@
+Contact: https://github.com/MrSausainis/Jyson/security/advisories/new
+Contact: mailto:jysenai.support@gmail.com
+Expires: 2027-09-29T00:00:00Z
+Preferred-Languages: en, lt
+Canonical: https://get-jyson.netlify.app/.well-known/security.txt
+Policy: https://get-jyson.netlify.app/security.html
+
