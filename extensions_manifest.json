@@ -1,15 +1,37 @@
 {
   "schema_version": 1,
+  "sequence": 1,
   "extensions": [
     {
       "id": "obs_streamer_tools",
       "name": "Streamer Tools (OBS + Twitch + Kick + YouTube)",
-      "description": "Voice-controlled OBS (start/stop stream, switch scenes, mute sources, save a clip) plus live-status checks and chat posting on Twitch, Kick, and YouTube.",
-      "version": "1.2.0",
+      "description": "Control OBS by voice (start/stop the stream, switch scenes, mute sources, save a clip) and check or post in your Twitch, Kick and YouTube chat. Sign in to Twitch and YouTube from its settings.",
+      "version": "1.3.0",
+      "author": "Jyson",
+      "publisher": "jyson",
+      "homepage": "https://github.com/MrSausainis/Jyson/blob/main/EXTENSIONS.md",
+      "api_version": 2,
+      "min_jyson_version": "2.4.0",
       "tier_flag": "streamer_tools_enabled",
-      "download_url": "https://github.com/MrSausainis/Jyson/releases/download/extensions/obs_streamer_tools.zip",
-      "sha256": "60a3379072083d788d59a32953f1bf3d468124f93109b64a493521d6a2452aeb",
-      "package_size_bytes": 12037
+      "permissions": {
+        "hosts": [
+          "api.twitch.tv",
+          "id.twitch.tv",
+          "api.kick.com",
+          "www.googleapis.com",
+          "youtube.googleapis.com"
+        ],
+        "local_network": true,
+        "oauth": [
+          "twitch",
+          "google"
+        ],
+        "speak": true
+      },
+      "download_url": "https://github.com/MrSausainis/Jyson/releases/download/extensions/obs_streamer_tools-1.3.0.zip",
+      "sha256": "fe5b4580ccc5c786c5efa69a54038d5ed4f47386c7e6198e828f0798a2add68e",
+      "package_size_bytes": 8424
     }
-  ]
+  ],
+  "revoked": []
 }
