@@ -1,0 +1,48 @@
+Jyson AI - Proprietary Software License
+
+Copyright (c) 2026 MrSausainis (Jyson AI). All rights reserved.
+
+This is not an open-source licence. Jyson AI - its source code, the compiled program and installer, the phone
+app, the website code, designs, icons, sounds, texts and documentation ("the Software") - is protected by
+copyright, including the Law on Copyright and Related Rights of the Republic of Lithuania and EU law. Being
+able to see or download something does not give a right to use it beyond what this licence says.
+
+1. What you may do
+   You may download the Software from its official sources (the GitHub releases of MrSausainis/Jyson and the
+   Jyson AI website), install it on devices you own or control, and use it for your own personal or work
+   tasks, within the Terms of Service and the plan your account is entitled to.
+
+2. What you may not do without the author's written permission
+   a. Copy, publish, share, sell, rent, lend, sublicense or otherwise distribute the Software or any part of
+      it, other than installing it as in point 1.
+   b. Use any of its code, designs or other parts in another product or service, commercial or not.
+   c. Modify it, make derivative works of it, or decompile, disassemble or reverse engineer it, except where
+      the law expressly allows this and that right cannot be limited by agreement.
+   d. Remove or change copyright or licence notices, or get around licence or plan checks, account limits or
+      update signatures.
+
+3. Code you can see on GitHub
+   Where files are publicly visible on GitHub, GitHub's Terms of Service let you view them and fork them on
+   GitHub. That does not give any of the rights listed in point 2.
+
+4. Third-party components
+   The Software includes open-source components under their own licences, listed in THIRD_PARTY_NOTICES.md
+   (installed next to the app).
+   Those licences govern those components, and nothing here limits the rights they give you.
+
+5. Content made by others
+   Skills, extensions and other content published by other users belong to their authors under their own
+   terms.
+
+6. No warranty
+   To the extent the law allows, the Software is provided "as is", without warranties. Mandatory consumer
+   rights are not affected. The Terms of Service (https://get-jyson.netlify.app/terms.html) apply as well.
+
+7. End of the licence
+   If you break this licence, your right to use the Software ends automatically.
+
+8. Law
+   This licence is governed by Lithuanian law and applicable EU law, without taking away mandatory protections
+   consumers have where they live.
+
+Permission for anything not allowed above: https://get-jyson.netlify.app/support.html

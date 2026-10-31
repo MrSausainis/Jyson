@@ -53,3 +53,9 @@ The installer is not code-signed yet, so Microsoft SmartScreen may show a warnin
 Jyson is under active development. See the [changelog](CHANGELOG.md) for what changed in each version and what is coming next.
 
 Product information, account access and support are on the [website](https://get-jyson.netlify.app).
+
+## License
+
+Jyson AI is proprietary software: **all rights reserved**. You may download it from the official releases and use
+it, but not copy, redistribute, modify or reuse its code, website or designs. See [LICENSE](LICENSE).
+Open-source components inside the app keep their own licences (listed in `THIRD_PARTY_NOTICES.md` next to the app).
