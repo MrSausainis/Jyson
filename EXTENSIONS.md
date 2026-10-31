@@ -82,6 +82,11 @@ Setting types: `text`, `secret` (stored encrypted, never shown again), `switch`,
 | `api.local_only()` | True while the user has Local-only mode on. |
 | `api.jyson_version()` | The running Jyson version. |
 
+**Between versions:** within API 2, methods are only ever added - never removed or changed - so an extension
+keeps working on newer Jyson. Check `api.jyson_version()` before using a newer method. A future API 3 would be
+a new `API_VERSION`: an older Jyson refuses such an extension with "update Jyson" instead of half-loading it,
+and the list's `min_jyson_version` keeps it from being offered there at all.
+
 Nothing else of Jyson is reachable: an extension can't read chats, memory, keys or other extensions' settings
 through the API.
 
