@@ -7,6 +7,16 @@ Versions before 2.3.0 are no longer listed. Jyson moved to a new update system w
 older versions can't receive updates or support any more. If you still run one, install the latest version from the
 [releases page](https://github.com/MrSausainis/Jyson/releases).
 
+## 2.3.1 - 2026-10-31
+
+Jyson's downloads moved to this page and the website has a new address. 2.3.1 follows them, so this version keeps getting updates.
+
+### 🔧 Fixed
+- **Updates** are checked on this releases page, and Jyson 2.3 can install the coming 2.4 update by itself.
+- **Settings → Extensions** finds Streamer Tools again.
+- **Settings → Account** and signing in open the website at its new address, get-jyson.netlify.app.
+- The **Changelog** and **Releases** links in Settings → Updates open this page.
+
 ## 2.3.0 - 2026-10-17
 
 Jyson meets your phone: calls and messages show up on the Dynamic Island, and the phone can control the PC. Jyson now hears its name on your PC, so it stops going deaf in long gaming sessions. Answers appear as they are written, the natural voice is new, Settings is rebuilt, and updates are now signed.
