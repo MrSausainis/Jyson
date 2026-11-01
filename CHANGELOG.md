@@ -7,57 +7,6 @@ Versions before 2.3.0 are no longer listed. Jyson moved to a new update system w
 older versions can't receive updates or support any more. If you still run one, install the latest version from the
 [releases page](https://github.com/MrSausainis/Jyson/releases).
 
-## 2.4.0 - 2026-10-31
-
-Jyson's biggest update: a new window, its own taskbar, more AI providers with the right model for each task, extensions anyone can make, skills and routines, and much more from your phone.
-
-### ✨ New
-
-#### A new window
-- **The whole app is rebuilt** on a modern window: smoother, faster themes, Settings rebuilt with each feature's settings in its own section, and search that finds any setting.
-- **Attach files to a message:** pictures, PDFs, Word and Excel files, text and code.
-- **Snap the window** with Win+arrow keys, on any monitor.
-
-#### The Jyson taskbar (paid plans)
-- **Jyson can replace Windows' taskbar:** your pinned and open apps, live previews (with an ✕ to close a window), Spotify with its cover, progress, skip and play, the clock and quick settings.
-- **It learns which apps you use** and can suggest the one you usually open now; in Focus mode distracting apps fade.
-- **Say "pin Spotify to the taskbar", "move Discord left", "how long did I use Chrome today".** Drag apps to reorder them.
-- It stays out of the way in games and full-screen video, comes up with the Win key, and works on every monitor.
-
-#### More AI, the right model for each task
-- **Use OpenAI, Claude, Gemini, OpenRouter, Mistral, DeepSeek, Grok or your own server** next to Groq - paste a key, or **Sign in with OpenRouter**.
-- **Jyson picks a model for each kind of task** - chat, PC control, coding, research, writing, reasoning, pictures - and you can choose your own for any of them in Settings → AI → Models for each task.
-- **If one provider is busy or out of its limit, the next one answers.** Your plan (free or paid) and limits are shown, read from the provider itself.
-- **"What's on my screen" works** with a Gemini, OpenAI or Claude key.
-- Speech recognition falls back to OpenAI and web search to Brave when Groq or Tavily can't answer.
-
-#### Extensions anyone can make
-- **A new extension system:** extensions declare what they need (which sites, your sign-ins, speaking) and get only that; passwords and tokens they save are encrypted.
-- **Community extensions** run in their own process, show who made them and what they ask for before you install, and every extension has a **Report** button. Jyson can withdraw an extension for everyone.
-- **Make your own:** Settings → Integrations → Make your own extensions (Developer mode), and the guide at [EXTENSIONS.md](https://github.com/MrSausainis/Jyson/blob/main/EXTENSIONS.md).
-- **Streamer Tools 1.3.0:** "start the stream", "stop the stream", "clip that" and "switch scene to ..." work instantly without the AI; Test connection checks OBS.
-- **MCP servers:** connect any MCP server (Home Assistant, Notion, GitHub and more) in Settings → Integrations; each action asks you first.
-- **Game status:** ask "how's my game going" in Dota 2, League of Legends or CS2.
-
-#### Skills and routines
-- **Add skills** (the SKILL.md packs Claude, Codex and Gemini CLI use) from GitHub, a link, a file or a folder, or write your own. Jyson reads skills and never runs their scripts; a skill from the internet asks before it acts.
-- **A skill can run by itself:** every day at a time, when you unlock the PC, or after a game.
-
-#### Phone link
-- **More from the phone:** open a link on the PC, copy text, send a photo, switch audio output, set an app's volume, lock, sleep or shut down, see the GPU temperature and the CS2 score, save an OBS clip.
-
-#### Your PC
-- **Screen brightness by voice** on external monitors (DDC/CI) and laptop screens.
-- **A halo around the Dynamic Island** for calls, messages, timers and answers you choose.
-
-### 🛠️ Fixed and improved
-- **"Stop" the way people say it** - and while Jyson talks, "stop" works without its name.
-- **Nothing is learned from game callouts.**
-- **A key pasted into the chat is saved to secure storage** and never sent to the AI.
-- Search follow-ups keep their topic and know today's date.
-- Fresh chats no longer stop with "couldn't finish the answer" after a tool.
-- Jyson AI is the new name; your settings, chats and keys come with you.
-
 ## 2.3.1 - 2026-10-31
 
 Jyson's downloads moved to this page and the website has a new address. 2.3.1 follows them, so this version keeps getting updates.
