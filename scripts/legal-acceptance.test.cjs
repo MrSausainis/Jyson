@@ -79,7 +79,7 @@ test('actual session renderer keeps billing/data dashboard available while gatin
   context.supa.from=table=>{const q={select:()=>q,eq:()=>q,maybeSingle:async()=>({data:table==='profiles'?{account_name:'Example'}:{tier_id:'free',tier_source:'signup',tiers:{allowed_themes:['Frost']}}})};return q;};
   context.refreshLegalState=async uid=>{assert.equal(uid,'own');return accepted;};
   context.PAGE_PARAMS=new URLSearchParams('desktop_callback=http://localhost:1234/callback&desktop_state=state&desktop_handoff=post-v2');
-  context.LEGACY_THEME_ALIASES={};context.showWrap=which=>s.wrap=which;
+  context.LEGACY_THEME_ALIASES={};context.SALES_OPEN=false;context.showWrap=which=>s.wrap=which;
   context.renderFeatures=()=>{};context.renderThemeSwatches=()=>{};context.loadOwnReview=()=>{};
   context.validatedDesktopCallback=()=>new URL('http://localhost:1234/callback');
   context.postDesktopSession=()=>s.handed++;

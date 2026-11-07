@@ -9,6 +9,9 @@ const SUPABASE_URL = "https://upiadmvxzphegivqszvp.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_iS9do7OPQuY-zEeAFfSrWQ_zA_IAObI";
 const DOWNLOAD_URL = "https://github.com/MrSausainis/Jyson/releases/latest/download/Jyson-AI-Setup.exe";
 const RESEND_COOLDOWN_SECONDS = 30;
+// Owner, 7 Nov 2026: no paid sales until the seller can register; new accounts get the free
+// release membership (until 30 Nov 2027). Flip with create-checkout's SALES_OPEN at launch.
+const SALES_OPEN = false;
 const LEGAL_RELEASE = {
   version: "2026-10-24.1",
   terms_sha256: "3a2cdc7586a21e6d233bfee56d214a31a132e797c7ba3d2f14c65aad3829ba67",
@@ -691,6 +694,7 @@ async function refreshSession(){
   const source = effectiveEntitlement.tier_source;
   const sourceLabel = source === "manual" ? "Given by the Jyson team" :
                       source === "stripe" ? "Paid plan" :
+                      source === "trial" ? "Free release membership" :
                       source === "expired" ? "Plan ended" : "Free";
   const normalizedTheme = LEGACY_THEME_ALIASES[effectiveEntitlement.preferred_theme] ||
                           effectiveEntitlement.preferred_theme ||
@@ -714,9 +718,14 @@ async function refreshSession(){
   el("settingsName").value = profile.account_name;
   // Show only what fits this plan: choices when there is none, controls for a paid one, a note for a given one.
   const paid = source === "stripe" && effectiveEntitlement.tier_id !== "free";
-  el("planChoose").classList.toggle("hidden", paid || source === "manual");
+  el("planChoose").classList.toggle("hidden", !SALES_OPEN || paid || source === "manual" || source === "trial");
   el("planManage").classList.toggle("hidden", !paid);
-  el("planManual").classList.toggle("hidden", source !== "manual");
+  const planNote = source === "manual" ? "This plan was given to you by the Jyson team. There is nothing to pay or cancel."
+    : source === "trial" && Number.isFinite(expiresAt) && expiresAt > Date.now()
+      ? `Free for everyone during the release, until ${new Date(expiresAt).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}. No card, nothing to pay, and it ends by itself.`
+    : !SALES_OPEN && !paid ? "Paid plans are not on sale yet. New accounts get every feature free during the release." : "";
+  el("planManual").textContent = planNote;
+  el("planManual").classList.toggle("hidden", !planNote);
   if (paid) loadSubscription();
   if (window.location.hash === "#plan") openDashboardSection("plan");
 

@@ -20,6 +20,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2.95.0";
 import Stripe from "npm:stripe@22.6.0";
 
+// Owner, 7 Nov 2026: no paid sales until the seller can register (at 18). Every new
+// account gets the free release membership instead. Flip to true at launch.
+const SALES_OPEN = false;
+
 const ACCOUNT_PAGE_URL = "https://get-jyson.netlify.app/account";
 const WEBSITE_ORIGIN = "https://get-jyson.netlify.app";
 
@@ -137,6 +141,9 @@ Deno.serve(async (req: Request) => {
 
   if (req.method !== "POST") {
     return jsonResponse({ error: "Method not allowed" }, 405);
+  }
+  if (!SALES_OPEN) {
+    return jsonResponse({ error: "Paid plans are not on sale yet. Every new account gets all features free until 30 November 2027." }, 403);
   }
 
   let admin: ReturnType<typeof createClient> | undefined;
