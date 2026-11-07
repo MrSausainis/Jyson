@@ -1,9 +1,8 @@
 try {
 
 if (typeof supabase === "undefined") {
-  throw new Error("The Supabase library itself never loaded - check your " +
-    "internet connection, or an ad blocker / privacy extension may be " +
-    "blocking cdn.jsdelivr.net.");
+  throw new Error("The Supabase library itself never loaded - reload the page; " +
+    "a browser extension may be blocking this site's scripts.");
 }
 
 const SUPABASE_URL = "https://upiadmvxzphegivqszvp.supabase.co";

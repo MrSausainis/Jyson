@@ -1,2 +1,4 @@
 extensions_manifest.json -text
 extensions_manifest.json.sig -text
+vendor/** -text
+*.png binary
