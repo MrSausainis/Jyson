@@ -297,3 +297,19 @@ kbd{font-family:var(--mono);font-size:.72rem;padding:1px 6px;border:1px solid va
 .theme-swatch-dot::after{opacity:.9;filter:none;width:34px;height:8px;border-radius:4px;right:10px;bottom:10px}
 .theme-swatch-label small{display:inline;margin-left:6px;color:var(--faint);font-size:.68rem}
 @media(max-width:720px){.theme-swatches{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* UI review 8 Nov: phones get a "send to my PC" instead of a Windows download they cannot run */
+.dl-phone,.dl-phone-note{display:none}
+@media (hover:none) and (pointer:coarse){
+  .dl{display:none!important}
+  .dl-phone{display:inline-flex}
+  .dl-phone-note{display:block;color:var(--muted);font-size:.9rem;margin:10px 0 0}
+  .header-actions .dl-phone{display:none}
+}
+/* touch targets: the tour tabs and the footer links are at least 44 px tall */
+.tour-tab{min-height:44px}
+@media(max-width:720px){
+  .footer-links{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;width:100%}
+  .footer-links a{display:flex;align-items:center;min-height:44px;font-size:.9rem;border-bottom:1px solid var(--line)}
+}
+.section-kicker{font-size:.8rem}

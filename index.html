@@ -34,7 +34,7 @@
     </nav>
     <div class="header-actions">
       <a class="btn btn-secondary" href="account.html">Account</a>
-      <a class="btn btn-primary" href="https://github.com/MrSausainis/Jyson/releases/latest/download/Jyson-AI-Setup.exe">Download</a>
+      <a class="btn btn-primary dl" href="https://github.com/MrSausainis/Jyson/releases/latest/download/Jyson-AI-Setup.exe">Download</a>
     </div>
   </div>
 </header>
@@ -47,13 +47,18 @@
         <h1>Talk or type. Jyson does it on your PC.</h1>
         <p class="hero-copy">Open apps, play music, save a note, find the photo you sent from your phone. Jyson does the task, tells you what it did, and gets out of the way.</p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="https://github.com/MrSausainis/Jyson/releases/latest/download/Jyson-AI-Setup.exe">Download for Windows</a>
+          <a class="btn btn-primary dl" href="https://github.com/MrSausainis/Jyson/releases/latest/download/Jyson-AI-Setup.exe">Download for Windows</a>
+          <button class="btn btn-primary dl-phone" type="button" data-send-to-pc>Send this page to my PC</button>
           <a class="btn btn-secondary" href="#tour">See it first</a>
         </div>
+        <p class="dl-phone-note">Jyson is a Windows PC app. Open this page on your PC to download it.</p>
         <p class="hero-meta2">Free · Every feature free for new accounts until November 2027 · Windows 11</p>
       </div>
       <figure class="hero-shot">
-        <img src="img/app-activity.png" width="2560" height="1600" alt="The Jyson window: a chat about a weekend trip, with the activity list open at the top showing a song started by voice, a photo received from the phone, Discord opened and the volume changed." />
+        <picture>
+          <source media="(max-width: 720px)" srcset="img/app-activity-phone.webp" width="842" height="790" />
+          <img src="img/app-activity.png" width="2560" height="1600" alt="The Jyson window: a chat about a weekend trip, with the activity list open at the top showing a song started by voice, a photo received from the phone, Discord opened and the volume changed." />
+        </picture>
       </figure>
       <p class="shot-note">Real app window, filled with example data.</p>
     </div>
@@ -73,7 +78,7 @@
         <button class="tour-tab" role="tab" aria-selected="false" aria-controls="tour-shot" data-shot="notes">Notes</button>
       </div>
       <figure class="tour-frame" id="tour-shot" role="tabpanel">
-        <img id="tourImg" src="img/app-chat.png" width="2560" height="1600" alt="A chat with Jyson planning a 250 euro weekend in Riga." loading="lazy" />
+        <a id="tourLink" href="img/app-chat.png" target="_blank" rel="noopener" aria-label="Open the screenshot full size"><img id="tourImg" src="img/app-chat.png" width="2560" height="1600" alt="A chat with Jyson planning a 250 euro weekend in Riga." loading="lazy" /></a>
         <figcaption id="tourCap">Ask anything. Answers are formatted, and you can copy, rename, export or delete a chat.</figcaption>
       </figure>
     </div>
@@ -163,7 +168,7 @@
       <div class="section-head">
         <div class="section-kicker">Reviews</div>
         <h2>From people with a Jyson account.</h2>
-        <p>Only signed-in Jyson accounts can post a review. We don't check whether the reviewer installed the app. The newest reviews are shown first, and low ratings are not hidden. See something wrong? <a class="text-link" href="mailto:jysenai.support@gmail.com?subject=Report%20a%20review">Report a review</a>.</p>
+        <p>Only signed-in Jyson accounts can post a review. We don't check whether the reviewer installed the app. The newest reviews are shown first, and low ratings are not hidden. See something wrong? <a class="text-link" href="mailto:Jysonsupport@gmail.com?subject=Report%20a%20review">Report a review</a>.</p>
       </div>
       <div class="review-strip" id="reviewsGrid">
         <p class="reviews-empty">Loading reviews…</p>
@@ -179,7 +184,7 @@
           <p>Free. Make an account to get every feature until November 2027. Uninstall from Windows Settings like any other app.</p>
         </div>
         <div class="final-actions">
-          <a class="btn btn-primary" href="https://github.com/MrSausainis/Jyson/releases/latest/download/Jyson-AI-Setup.exe">Download Jyson</a>
+          <a class="btn btn-primary dl" href="https://github.com/MrSausainis/Jyson/releases/latest/download/Jyson-AI-Setup.exe">Download Jyson</a><button class="btn btn-primary dl-phone" type="button" data-send-to-pc>Send this page to my PC</button>
         </div>
       </div>
     </div>
@@ -193,7 +198,7 @@
       <a href="account.html">Account</a>
       <a href="https://github.com/MrSausainis/Jyson/releases">Releases</a>
       <a href="support.html">Support</a>
-      <a href="mailto:jysenai.support@gmail.com">jysenai.support@gmail.com</a>
+      <a href="mailto:Jysonsupport@gmail.com">Jysonsupport@gmail.com</a>
       <a href="privacy.html">Privacy</a>
       <a href="terms.html">Terms</a>
       <a href="refunds.html">Refunds</a>

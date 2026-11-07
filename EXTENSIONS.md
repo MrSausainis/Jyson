@@ -104,7 +104,7 @@ through the API.
 
 1. Check it: `python tools/pack_extension.py check <folder>` (in the Jyson desktop source) lists the lines a
    reviewer will read.
-2. Send it to Jyson (jysenai.support@gmail.com): the folder, a description, your name as it should appear, a
+2. Send it to Jyson (Jysonsupport@gmail.com): the folder, a description, your name as it should appear, a
    link where people can reach you, and what each permission is for.
 3. We review the code. If it's accepted we package it reproducibly, pin its exact SHA-256, add it to
    `extensions_manifest.json` with `"publisher": "community"` and your name as `author`, and sign the list.

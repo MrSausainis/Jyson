@@ -15,6 +15,7 @@ document.querySelectorAll(".tour-tab").forEach((tab) => tab.addEventListener("cl
   const [alt, cap] = SHOTS[tab.dataset.shot];
   const img = document.getElementById("tourImg");
   img.src = `img/app-${tab.dataset.shot}.png`;
+  document.getElementById("tourLink").href = img.src;
   img.alt = alt;
   document.getElementById("tourCap").textContent = cap;
 }));
@@ -40,6 +41,22 @@ fetch(REVIEWS_URL, { headers: { apikey: SUPABASE_ANON_KEY } })
   .catch(() => {
     document.getElementById("reviewsGrid").innerHTML = '<p class="reviews-empty">Reviews are unavailable right now.</p>';
   });
+
+// On a phone the download is a Windows installer it cannot run: the button sends this page on instead
+// (the share sheet: e-mail, a chat, or "send to PC"), or copies the link where there is no share sheet.
+document.querySelectorAll("[data-send-to-pc]").forEach((button) => button.addEventListener("click", async () => {
+  const url = location.origin + "/";
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: "Jyson for Windows", text: "Download Jyson on my PC", url });
+      return;
+    }
+    await navigator.clipboard.writeText(url);
+    button.textContent = "Link copied - open it on your PC";
+  } catch {
+    /* closed the share sheet: nothing to do */
+  }
+}));
 
 function escapeHtml(value){
   const div = document.createElement("div");

@@ -135,7 +135,7 @@ Deno.serve(async (req: Request) => {
     } else if (action === "withdraw") {
       const w = await withdrawal(sub, customerId);
       if ((w as { support?: boolean }).support) {
-        throw new UserError("Please email jysenai.support@gmail.com to withdraw; we handle repeated withdrawals by hand.");
+        throw new UserError("Please email Jysonsupport@gmail.com to withdraw; we handle repeated withdrawals by hand.");
       }
       if (!w.open) throw new UserError("The 14 days to withdraw have passed. You can still stop renewal.");
       let refunded = 0;
