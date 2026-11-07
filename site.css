@@ -291,3 +291,9 @@ kbd{font-family:var(--mono);font-size:.72rem;padding:1px 6px;border:1px solid va
 .danger-btn{color:var(--danger);border-color:rgba(239,133,140,.35)}
 .danger-btn:hover{border-color:var(--danger);background:rgba(239,133,140,.06)}
 @media(max-width:720px){.plan-cards{grid-template-columns:1fr}.acct-head .avatar{width:44px;height:44px}.header-user span{display:none}}
+/* Theme swatches: the app's theme families */
+.theme-swatches{grid-template-columns:repeat(3,minmax(0,1fr))}
+.theme-swatch-dot{background:linear-gradient(135deg,var(--dot-bg) 0 45%,var(--dot-surface,var(--dot-bg)) 45% 100%)!important;border-color:color-mix(in srgb,var(--dot-accent) 55%,transparent)}
+.theme-swatch-dot::after{opacity:.9;filter:none;width:34px;height:8px;border-radius:4px;right:10px;bottom:10px}
+.theme-swatch-label small{display:inline;margin-left:6px;color:var(--faint);font-size:.68rem}
+@media(max-width:720px){.theme-swatches{grid-template-columns:repeat(2,minmax(0,1fr))}}

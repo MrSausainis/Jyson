@@ -37,7 +37,7 @@ Settings, memory, conversations and other user data are stored separately from t
 
 ## Requirements
 
-- Windows 10 or Windows 11
+- Windows 11 (Windows 10 has not been tested yet)
 - An SSD is recommended
 - Cloud AI needs a supported provider API key
 - Local AI is optional and works best with a GPU that has enough VRAM; model files are not in the installer

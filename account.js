@@ -18,21 +18,34 @@ const LEGAL_RELEASE = {
   privacy_sha256: "2b267fa699a39066ffcfec454cd15f5160db9e7b56a006a56f1a2b266f9adc0f",
 };
 
+// The app's themes (jyson_theme.THEMES): background, surface and accent.
 const THEME_COLORS = {
-  "Midnight Purple": { bg: "#08060f", accent: "#b57bff" },
-  "Obsidian":        { bg: "#111111", accent: "#e6e6e6" },
-  "Frost":           { bg: "#04080a", accent: "#00cfff" },
-  "Crimson":         { bg: "#0a0406", accent: "#e63946" },
-  "Emerald":         { bg: "#05100b", accent: "#39d98a" },
-  "Monochrome":      { bg: "#000000", accent: "#ffffff" },
-  "OLED":            { bg: "#000000", accent: "#b8c2cc" },
+  "Mature / Graphite":  { bg: "#0f1012", surface: "#17191c", accent: "#7f95ad" },
+  "Mature / Slate":     { bg: "#0d1114", surface: "#151b20", accent: "#7399a2" },
+  "Mature / Sandstone": { bg: "#12100e", surface: "#1c1916", accent: "#b09a79" },
+  "Spectrum / Violet":  { bg: "#0c0a10", surface: "#17131d", accent: "#9a79c8" },
+  "Spectrum / Cyan":    { bg: "#091013", surface: "#111b20", accent: "#5b9faf" },
+  "Spectrum / Crimson": { bg: "#11090b", surface: "#1d1215", accent: "#c25f6c" },
+  "Spectrum / Emerald": { bg: "#09100c", surface: "#121b16", accent: "#5b9a76" },
+  "Minimal / OLED":     { bg: "#000000", surface: "#000000", accent: "#7f93a8" },
+  "Minimal / Mono":     { bg: "#090909", surface: "#121212", accent: "#d8d8d8" },
 };
 const ALL_THEME_NAMES = Object.keys(THEME_COLORS);
+const DEFAULT_THEME = "Mature / Graphite";
+// Old names still stored on accounts and in tier lists (same map as the app's LEGACY_THEME_ALIASES).
 const LEGACY_THEME_ALIASES = {
-  "Holographic E.V.A.": "Frost",
-  "Crimson Core": "Crimson",
-  "Phantom Silver": "Obsidian",
+  "Holographic E.V.A.": "Spectrum / Cyan",
+  "Frost": "Spectrum / Cyan",
+  "Phantom Silver": "Mature / Slate",
+  "Obsidian": "Mature / Graphite",
+  "Crimson Core": "Spectrum / Crimson",
+  "Crimson": "Spectrum / Crimson",
+  "Midnight Purple": "Spectrum / Violet",
+  "Emerald": "Spectrum / Emerald",
+  "Monochrome": "Minimal / Mono",
+  "OLED": "Minimal / OLED",
 };
+const themeName = (name) => LEGACY_THEME_ALIASES[name] || name;
 
 const PAGE_PARAMS = new URLSearchParams(window.location.search);
 const DESKTOP_LOGIN_MODE = PAGE_PARAMS.has("desktop_callback");
@@ -660,7 +673,7 @@ async function refreshSession(){
       ...entitlement,
       tier_id: "free",
       tier_source: "expired",
-      tiers: freeTier || { display_name: "Free", allowed_themes: ["Frost"] },
+      tiers: freeTier || { display_name: "Free", allowed_themes: [DEFAULT_THEME] },
     };
   }
 
@@ -696,9 +709,10 @@ async function refreshSession(){
                       source === "stripe" ? "Paid plan" :
                       source === "trial" ? "Free release membership" :
                       source === "expired" ? "Plan ended" : "Free";
-  const normalizedTheme = LEGACY_THEME_ALIASES[effectiveEntitlement.preferred_theme] ||
-                          effectiveEntitlement.preferred_theme ||
-                          effectiveEntitlement.tiers?.allowed_themes?.[0] || "Frost";
+  const allowedThemes = [...new Set((effectiveEntitlement.tiers?.allowed_themes || [DEFAULT_THEME]).map(themeName))]
+    .filter((name) => THEME_COLORS[name]);
+  const normalizedTheme = [themeName(effectiveEntitlement.preferred_theme), DEFAULT_THEME, allowedThemes[0]]
+    .find((name) => name && THEME_COLORS[name] && allowedThemes.includes(name)) || DEFAULT_THEME;
 
   el("dashName").textContent = profile.account_name;
   el("dashAvatar").textContent = profile.account_name.charAt(0).toUpperCase();
@@ -740,7 +754,7 @@ async function refreshSession(){
   }
 
   renderFeatures(effectiveEntitlement.tiers || {});
-  renderThemeSwatches(effectiveEntitlement.tiers?.allowed_themes || ["Frost"], normalizedTheme);
+  renderThemeSwatches(allowedThemes.length ? allowedThemes : [DEFAULT_THEME], normalizedTheme);
   loadOwnReview(uid);
   if (desktopCallback && !hasLegalAcceptance) {
     showMsg("dashMsg", "Agree to the Terms above to finish signing in to the app.", "warn");
@@ -855,9 +869,9 @@ function renderThemeSwatches(allowedThemes, preferred){
     return `
       <button type="button" class="theme-swatch ${active ? "active" : ""} ${locked ? "locked" : ""}"
               data-theme="${name}" ${locked ? "disabled" : ""}
-              style="--dot-bg:${c.bg}; --dot-accent:${c.accent};">
+              style="--dot-bg:${c.bg}; --dot-surface:${c.surface}; --dot-accent:${c.accent};">
         <span class="theme-swatch-dot"></span>
-        <span class="theme-swatch-label">${name}</span>
+        <span class="theme-swatch-label">${name.split(" / ")[1]}<small>${name.split(" / ")[0]}</small></span>
         ${locked ? '<span class="theme-swatch-lock">Locked</span>' : ""}
       </button>`;
   }).join("");
