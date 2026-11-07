@@ -8,7 +8,7 @@ const source=fs.readFileSync(path.join(__dirname,'../account.js'),'utf8');
 const releaseCode=source.slice(source.indexOf('const LEGAL_RELEASE ='),source.indexOf('const THEME_COLORS'));
 function setup() {
  const s={user:{id:'own'},status:null,calls:[],error:null,authError:null,refreshes:0,invokes:0,handed:0};
- const nodes={};const el=id=>nodes[id]??=({checked:false,disabled:false,textContent:'',scrollIntoView:()=>{},classList:{hidden:false,add(c){if(c==='hidden')this.hidden=true;},remove(c){if(c==='hidden')this.hidden=false;},contains(c){return c==='hidden'&&this.hidden;}}});
+ const nodes={};const el=id=>nodes[id]??=({checked:false,disabled:false,textContent:'',scrollIntoView:()=>{},classList:{hidden:false,toggle(c,on){if(c==='hidden')this.hidden=on;},add(c){if(c==='hidden')this.hidden=true;},remove(c){if(c==='hidden')this.hidden=false;},contains(c){return c==='hidden'&&this.hidden;}}});
  const context={el,Date,Number,showMsg:(id,msg)=>el(id).textContent=msg,hideMsg:()=>{},setBusy:(node,on)=>node.disabled=on,
   refreshSession:async()=>{s.refreshes++;el('legalConfirmBtn').disabled=true;},
   supa:{auth:{getUser:async()=>({data:{user:s.user},error:s.authError})},rpc:async(name,p)=>{s.calls.push({name,p});return {data:s.status,error:s.error};},functions:{invoke:async()=>{s.invokes++;return {data:{url:'https://checkout.stripe.com/test'}};}}},
@@ -16,7 +16,7 @@ function setup() {
  };
  vm.runInNewContext(releaseCode+'\nthis.release=LEGAL_RELEASE;',context);
  s.status={...context.release,accepted:false,accepted_at:null};
- vm.runInNewContext(source.slice(source.indexOf('async function refreshLegalState('),source.indexOf('function renderFeatures(')),context);
+ vm.runInNewContext(source.slice(source.indexOf('async function acceptCurrentLegal('),source.indexOf('function renderFeatures(')),context);
  vm.runInNewContext(source.slice(source.indexOf('async function startCheckout('),source.indexOf('async function openBillingPortal(')),context);
  return {s,context,el};
 }
@@ -31,12 +31,12 @@ test('pinned public document copies match the frontend hashes',()=>{
 test('existing accounts with no ledger evidence get unchecked controls; status never accepts',async()=>{
  const {s,context,el}=setup();
  assert.equal(await context.refreshLegalState('own'),false);
- assert.equal(el('legalConfirmBtn').disabled,false);assert.equal(el('legalTerms').checked,false);assert.equal(el('legalPrivacy').checked,false);
+ assert.equal(el('legalConfirmBtn').disabled,false);assert.equal(el('legalTerms').checked,false);assert.equal(el('legalPanel').classList.hidden,false);
  assert.deepEqual(s.calls.map(c=>c.name),['get_legal_acceptance_status']);
 });
 test('acceptance hides controls only after matching version/hashes and a valid server time',async()=>{
  const {s,context,el}=setup();s.status.accepted=true;s.status.accepted_at='2026-09-30T20:00:00Z';
- assert.equal(await context.refreshLegalState(),true);assert.equal(el('legalControls').classList.hidden,true);
+ assert.equal(await context.refreshLegalState(),true);assert.equal(el('legalPanel').classList.hidden,true);
  for(const change of [{version:'changed'},{terms_sha256:'changed'},{privacy_sha256:'changed'},{accepted_at:null}]) {
   const t=setup();Object.assign(t.s.status,{accepted:true,accepted_at:'2026-09-30T20:00:00Z'},change);
   assert.equal(await t.context.refreshLegalState(),false);
@@ -49,11 +49,10 @@ test('offline, expired, changed-account and malformed status fail closed without
   assert.equal(el('legalControls').classList.hidden,false);
  }
 });
-test('explicit checkboxes submit only pinned document evidence, never client identity or time',async()=>{
+test('the one checkbox submits only pinned document evidence, never client identity or time',async()=>{
  const {s,context,el}=setup();await context.refreshLegalState();s.calls=[];
  await context.confirmCurrentLegal();assert.equal(s.calls.length,0);
- el('legalTerms').checked=true;await context.confirmCurrentLegal();assert.equal(s.calls.length,0);
- el('legalPrivacy').checked=true;s.status={...context.release,accepted:true,accepted_at:'2026-09-30T20:00:00Z'};
+ el('legalTerms').checked=true;s.status={...context.release,accepted:true,accepted_at:'2026-09-30T20:00:00Z'};
  await context.confirmCurrentLegal();
  assert.equal(s.refreshes,1);assert.equal(el('legalConfirmBtn').disabled,true);
  const call=s.calls[0];assert.equal(call.name,'accept_current_legal');
@@ -61,14 +60,14 @@ test('explicit checkboxes submit only pinned document evidence, never client ide
 });
 test('failed or changed confirmation does not navigate or report success; repeated clicks are fenced',async()=>{
  for(const mode of ['error','changed','offline']) {
-  const {s,context,el}=setup();await context.refreshLegalState();el('legalTerms').checked=el('legalPrivacy').checked=true;
+  const {s,context,el}=setup();await context.refreshLegalState();el('legalTerms').checked=true;
   if(mode==='error')s.error={message:'unavailable'};else if(mode==='changed')s.status.version='new';else s.user=null;
   await context.confirmCurrentLegal();assert.equal(s.refreshes,0);assert.equal(el('legalConfirmBtn').disabled,false);
  }
  const {s,context,el}=setup();el('legalConfirmBtn').disabled=true;await context.confirmCurrentLegal();assert.equal(s.calls.length,0);
 });
 test('new checkout waits for ledger acceptance and fails closed on server status outage',async()=>{
- const {s,context}=setup();await context.startCheckout('monthly');assert.equal(s.invokes,0);
+ const {s,context,el}=setup();el('startNow').checked=true;await context.startCheckout('monthly');assert.equal(s.invokes,0);
  s.status.accepted=true;s.status.accepted_at='2026-09-30T20:00:00Z';await context.startCheckout('annual');assert.equal(s.invokes,1);
  s.error={message:'offline'};await context.startCheckout('monthly');assert.equal(s.invokes,1);
 });
@@ -89,4 +88,22 @@ test('actual session renderer keeps billing/data dashboard available while gatin
   assert.equal(s.handed,accepted?1:0);
   if(!accepted)assert.equal(s.wrap,'dash');
  }
+});
+test('checkout waits for the start-now box and sends it',async()=>{
+ const {s,context,el}=setup();s.status.accepted=true;s.status.accepted_at='2026-09-30T20:00:00Z';
+ await context.startCheckout('monthly');assert.equal(s.invokes,0);
+ el('startNow').checked=true;await context.startCheckout('monthly');assert.equal(s.invokes,1);
+});
+test('the sign-up box is recorded once on the server at the first visit, and only for the same version',async()=>{
+ const {s,context,el}=setup();s.user={id:'own',user_metadata:{legal_agreed_version:context.release.version}};
+ const accepted={...context.release,accepted:true,accepted_at:'2026-11-07T20:00:00Z'};
+ context.supa.rpc=async(name,p)=>{s.calls.push({name,p});return {data:name==='accept_current_legal'?accepted:s.status,error:null};};
+ assert.equal(await context.refreshLegalState('own'),true);assert.equal(el('legalPanel').classList.hidden,true);
+ assert.deepEqual(s.calls.map(c=>c.name),['get_legal_acceptance_status','accept_current_legal']);
+ const old=setup();old.s.user={id:'own',user_metadata:{legal_agreed_version:'2026-01-01.1'}};
+ assert.equal(await old.context.refreshLegalState('own'),false);
+ assert.deepEqual(old.s.calls.map(c=>c.name),['get_legal_acceptance_status']);assert.equal(old.el('legalPanel').classList.hidden,false);
+ const bad=setup();bad.s.user={id:'own',user_metadata:{legal_agreed_version:bad.context.release.version}};
+ bad.context.supa.rpc=async(name)=>({data:name==='accept_current_legal'?{accepted:false}:bad.s.status,error:null});
+ assert.equal(await bad.context.refreshLegalState('own'),false);assert.equal(bad.el('legalConfirmBtn').disabled,false);
 });

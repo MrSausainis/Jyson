@@ -12,7 +12,9 @@ const publicFiles = [
   "privacy.html", "terms.html", "refunds.html", "cookies.html",
   "terms-2026-10-24.1.html", "privacy-2026-10-24.1.html",
   "security.html", "accessibility.html",
-  "site.css", "site.js", "account.js", "favicon.svg",
+  "site.css", "site.js", "account.js", "favicon.svg", "logo.svg",
+  "vendor/supabase-2.117.2.min.js",
+  "img/app-chat.png", "img/app-activity.png", "img/app-files.png", "img/app-notes.png",
   "robots.txt", "sitemap.xml", "extensions_manifest.json",
   "_headers", ".well-known/security.txt",
 ];

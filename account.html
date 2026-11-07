@@ -7,25 +7,29 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://upiadmvxzphegivqszvp.supabase.co wss://upiadmvxzphegivqszvp.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self' http://127.0.0.1:* http://localhost:*; upgrade-insecure-requests" />
 <meta name="color-scheme" content="dark" />
 <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-<meta name="description" content="Manage your Jyson AI account, plan access, desktop theme and security settings." />
-<meta name="theme-color" content="#05080d" />
+<meta name="description" content="Your Jyson account: plan, appearance and sign-in settings." />
+<meta name="theme-color" content="#0f1012" />
 <meta name="robots" content="noindex,nofollow" />
-<meta property="og:title" content="Jyson AI Account" />
-<meta property="og:description" content="Manage plan access and settings for the Jyson AI Windows desktop assistant." />
-<title>Jyson AI Account</title>
+<meta property="og:title" content="Your Jyson account" />
+<meta property="og:description" content="Plan, appearance and sign-in settings for the Jyson Windows assistant." />
+<title>Your Jyson account</title>
 <link rel="stylesheet" href="site.css" />
 </head>
 <body class="account-page">
 <a class="skip-link" href="#account-main">Skip to account content</a>
 <header class="site-header">
   <div class="shell">
-    <a class="brand" href="index.html" aria-label="Jyson AI home">
-      <span class="brand-mark">AI</span>
-      <span class="brand-word">Jyson AI</span>
-      <span class="brand-version">ACCOUNT</span>
+    <a class="brand" href="index.html" aria-label="Jyson home">
+      <span class="brand-mark">J</span>
+      <span class="brand-word">Jyson</span>
     </a>
     <div class="header-actions">
-      <a class="btn btn-quiet" href="index.html">Back to product</a>
+      <div class="header-user hidden" id="headerUser">
+        <div class="avatar" id="headerAvatar" aria-hidden="true">?</div>
+        <span id="headerName">Account</span>
+        <button class="btn btn-quiet" id="logoutBtn">Log out</button>
+      </div>
+      <a class="btn btn-quiet" id="homeLink" href="index.html">Home</a>
       <a class="btn btn-secondary" href="https://github.com/MrSausainis/Jyson/releases/latest/download/Jyson-AI-Setup.exe">Download</a>
     </div>
   </div>
@@ -34,26 +38,24 @@
 <div class="account-loader" id="loadingWrap">
   <div class="loader-box">
     <div class="loader-ring"></div>
-    <strong>Checking your session</strong>
-    <div style="margin-top:7px;font-size:.8rem;">Loading your Jyson AI account securely.</div>
+    <strong>Checking your sign-in</strong>
   </div>
 </div>
 
 <div class="auth-layout hidden" id="authWrap">
   <section class="auth-context">
-    <div class="eyebrow"><span class="eyebrow-line"></span><span>Your Jyson AI account</span></div>
-    <h1>One place for access, plans and preferences.</h1>
-    <p>The desktop app can be tried without an account. Sign in when you want plan access, synced appearance preferences, reviews, or a desktop session connected to your account.</p>
+    <h1>Your Jyson account.</h1>
+    <p>You don't need an account to use Jyson. Make one when you want a paid plan, your theme on every PC, or to leave a review.</p>
     <div class="auth-benefits">
-      <div class="auth-benefit"><span>Plan</span><span>See exactly which features your current tier unlocks and upgrade when you actually need more.</span></div>
-      <div class="auth-benefit"><span>Desktop</span><span>Sign in from Jyson AI without copying passwords or API keys into the website.</span></div>
-      <div class="auth-benefit"><span>Appearance</span><span>Your chosen account theme can carry back to the desktop app on the next login.</span></div>
+      <div class="auth-benefit"><span>Plan</span><span>See what your plan includes, and stop or cancel it here any time.</span></div>
+      <div class="auth-benefit"><span>Desktop</span><span>Sign in to Jyson through this page. Your API keys never come here.</span></div>
+      <div class="auth-benefit"><span>Theme</span><span>The theme you pick here follows you to the app.</span></div>
     </div>
   </section>
 
   <section class="auth-card" id="authView">
     <h2 id="authTitle">Create your account</h2>
-    <p class="sub" id="authSubtitle">Use it for plan access and synced account preferences.</p>
+    <p class="sub" id="authSubtitle">Fields marked <span class="req" aria-hidden="true">*</span> are required.</p>
 
     <div class="tabs" role="tablist" aria-label="Account access">
       <button type="button" class="tab active" id="tabSignup" role="tab" aria-selected="true" aria-controls="signupForm" tabindex="0">Sign up</button>
@@ -61,16 +63,19 @@
     </div>
 
     <div id="signupForm" role="tabpanel" aria-labelledby="tabSignup" aria-hidden="false">
-      <label for="su_name">Account name</label>
-      <input id="su_name" type="text" autocomplete="username" maxlength="64" aria-describedby="su_name_hint" placeholder="Choose a public account name" />
-      <small id="su_name_hint">1–32 letters, digits, spaces, dots, underscores or hyphens. Names are unique regardless of letter case.</small>
-      <label for="su_email">Email</label>
-      <input id="su_email" type="email" autocomplete="email" placeholder="you@example.com" />
-      <label for="su_pass">Password</label>
-      <input id="su_pass" type="password" autocomplete="new-password" minlength="12" placeholder="12 characters or more" />
-      <label class="check-row" for="su_legal"><input id="su_legal" type="checkbox" /><span>I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms</a> and have read the <a href="privacy.html" target="_blank" rel="noopener">Privacy Notice</a>.</span></label>
-      <p class="panel-lede">After verifying your email, confirm the document version in your account so we can save the confirmation on the server.</p>
-      <button class="btn btn-primary block" id="su_submit" style="margin-top:18px;">Create account</button>
+      <label for="su_name">Account name<span class="req" aria-hidden="true">*</span></label>
+      <input id="su_name" type="text" autocomplete="username" maxlength="64" required aria-describedby="su_name_hint su_name_err" placeholder="Shown with your reviews" />
+      <small id="su_name_hint">Up to 32 characters: letters, numbers, spaces and <kbd>.</kbd> <kbd>_</kbd> <kbd>-</kbd></small>
+      <span class="field-error" id="su_name_err" aria-live="polite"></span>
+      <label for="su_email">Email<span class="req" aria-hidden="true">*</span></label>
+      <input id="su_email" type="email" autocomplete="email" required aria-describedby="su_email_err" placeholder="you@example.com" />
+      <span class="field-error" id="su_email_err" aria-live="polite"></span>
+      <label for="su_pass">Password<span class="req" aria-hidden="true">*</span></label>
+      <input id="su_pass" type="password" autocomplete="new-password" minlength="12" required aria-describedby="su_pass_err" placeholder="At least 12 characters" />
+      <span class="field-error" id="su_pass_err" aria-live="polite"></span>
+      <label class="check-row" for="su_legal" id="su_legal_row"><input id="su_legal" type="checkbox" required aria-describedby="su_legal_err" /><span>I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms</a> and have read the <a href="privacy.html" target="_blank" rel="noopener">Privacy Notice</a>.<span class="req" aria-hidden="true">*</span></span></label>
+      <span class="field-error" id="su_legal_err" aria-live="polite"></span>
+      <button class="btn btn-primary block" id="su_submit" aria-disabled="true" style="margin-top:18px;">Create account</button>
       <button class="btn btn-secondary block hidden" id="su_resend" style="margin-top:9px;">Resend confirmation email</button>
     </div>
 
@@ -96,13 +101,13 @@
       <h2>Set a new password</h2>
       <p class="sub">Choose a new password for this account.</p>
       <label for="recovery_pass">New password</label>
-      <input id="recovery_pass" type="password" autocomplete="new-password" minlength="12" placeholder="12 characters or more" />
+      <input id="recovery_pass" type="password" autocomplete="new-password" minlength="12" placeholder="At least 12 characters" />
       <button class="btn btn-primary block" id="recovery_submit" style="margin-top:18px;">Set new password</button>
     </div>
 
     <div class="msg" id="authMsg"></div>
     <div class="auth-bottom">
-      <span>Basic app use does not require an account.</span>
+      <span>Using Jyson doesn't need an account.</span>
       <span><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></span>
     </div>
   </section>
@@ -112,8 +117,8 @@
   <section class="broken-card" id="brokenView">
     <div class="dash-kicker">Account issue</div>
     <h1>We could not load your account data.</h1>
-    <p>Your login is valid, but the profile or plan record is unavailable. Log out and try again. If it keeps happening, contact project support privately.</p>
-    <div class="msg warn" style="display:block;">Your desktop app data has not been changed by this page.</div>
+    <p>Your login is valid, but the profile or plan record is unavailable. Log out and try again. If it keeps happening, contact support.</p>
+    <div class="msg warn" style="display:block;">Nothing in your desktop app was changed by this page.</div>
     <div style="display:flex;gap:9px;margin-top:18px;flex-wrap:wrap;">
       <button class="btn btn-secondary" id="brokenLogoutBtn">Log out</button>
       <a class="btn btn-primary" href="support.html">Open support</a>
@@ -121,148 +126,138 @@
   </section>
 </div>
 
-<div class="dashboard hidden" id="dashShell">
-  <aside class="dashboard-sidebar">
-    <div class="account-chip">
-      <div class="avatar" id="dashAvatar">?</div>
-      <div class="account-name" id="dashName">Account</div>
-      <div class="account-tier" id="sidebarTier">Loading plan…</div>
+<div class="acct hidden" id="dashShell">
+  <div class="acct-head">
+    <div class="avatar" id="dashAvatar" aria-hidden="true">?</div>
+    <div>
+      <div class="acct-name"><span id="dashName">Account</span><span class="plan-badge" id="sidebarTier">…</span></div>
+      <div class="acct-sub" id="overviewEmail">—</div>
     </div>
-    <nav class="dashboard-nav" aria-label="Account sections">
-      <button type="button" class="dash-nav-item active" data-section="overview">Overview</button>
-      <button type="button" class="dash-nav-item" data-section="plan">Plan</button>
-      <button type="button" class="dash-nav-item" data-section="features">App access</button>
-      <button type="button" class="dash-nav-item" data-section="appearance">Appearance</button>
-      <button type="button" class="dash-nav-item" data-section="account">Account & security</button>
-      <button type="button" class="dash-nav-item" data-section="feedback">Feedback</button>
-    </nav>
-    <div class="sidebar-foot">
-      <a class="btn btn-quiet" href="index.html">Product page</a>
-      <button class="btn btn-quiet" id="logoutBtn">Log out</button>
-    </div>
-  </aside>
+  </div>
 
-  <main class="dashboard-main" id="account-main">
-    <section class="panel" id="legalPanel" aria-labelledby="legalTitle">
-      <h2 id="legalTitle">Terms confirmation</h2>
-      <p class="panel-lede">Confirm the documents for your account after email verification. We save the document version and confirmation time on the server. Billing management and account data remain available before confirmation.</p>
-      <div id="legalControls">
-        <label class="check-row" for="legalTerms"><input type="checkbox" id="legalTerms" /><span>I agree to the <a href="terms-2026-10-24.1.html" target="_blank" rel="noopener">Terms, version 2026-10-24.1</a>.</span></label>
-        <label class="check-row" for="legalPrivacy"><input type="checkbox" id="legalPrivacy" /><span>I have read the <a href="privacy-2026-10-24.1.html" target="_blank" rel="noopener">Privacy Notice for this version</a>.</span></label>
-        <button type="button" class="btn btn-primary" id="legalConfirmBtn" disabled>Save confirmation</button>
-      </div>
-      <button type="button" class="btn btn-quiet" id="legalRetryBtn">Check confirmation again</button>
-      <div class="msg" id="legalMsg" role="status" aria-live="polite"></div>
-    </section>
+  <section class="panel legal-banner hidden" id="legalPanel" aria-labelledby="legalTitle">
+    <h2 id="legalTitle">One more thing</h2>
+    <p class="panel-lede" id="legalLede">Please agree to the current Terms. You only do this once, or again if they change.</p>
+    <div id="legalControls">
+      <label class="check-row" for="legalTerms"><input type="checkbox" id="legalTerms" /><span>I agree to the <a href="terms-2026-10-24.1.html" target="_blank" rel="noopener">Terms</a> and have read the <a href="privacy-2026-10-24.1.html" target="_blank" rel="noopener">Privacy Notice</a>.</span></label>
+      <div class="plan-actions"><button type="button" class="btn btn-primary" id="legalConfirmBtn" disabled>Agree</button><button type="button" class="btn btn-quiet" id="legalRetryBtn">Check again</button></div>
+    </div>
+    <div class="msg" id="legalMsg" role="status" aria-live="polite"></div>
+  </section>
+
+  <nav class="acct-tabs" aria-label="Account sections">
+    <button type="button" class="dash-nav-item active" data-section="overview">Overview</button>
+    <button type="button" class="dash-nav-item" data-section="plan">Plan</button>
+    <button type="button" class="dash-nav-item" data-section="appearance">Theme</button>
+    <button type="button" class="dash-nav-item" data-section="account">Account</button>
+    <button type="button" class="dash-nav-item" data-section="feedback">Review</button>
+  </nav>
+  <div class="msg" id="dashMsg"></div>
+
+  <main id="account-main">
     <section class="dash-section active" id="section-overview">
-      <div class="dash-head">
-        <div>
-          <div class="dash-kicker">Account overview</div>
-          <h1>Your Jyson AI setup</h1>
-          <p>Plan, app access and the settings that matter to the desktop app.</p>
-        </div>
-      </div>
-
       <div class="summary-grid">
-        <div class="summary-card"><div class="summary-label">Account</div><div class="summary-value" id="overviewName">—</div><div class="summary-note" id="overviewEmail">—</div></div>
-        <div class="summary-card"><div class="summary-label">Plan</div><div class="summary-value" id="overviewPlan">—</div><div class="summary-note" id="overviewPlanNote">Checking access</div></div>
-        <div class="summary-card"><div class="summary-label">Theme</div><div class="summary-value" id="overviewTheme">—</div><div class="summary-note">Synced on your next desktop login</div></div>
+        <div class="summary-card"><div class="summary-label">Plan</div><div class="summary-value" id="overviewPlan">—</div><div class="summary-note" id="overviewPlanNote">Checking…</div></div>
+        <div class="summary-card"><div class="summary-label">Theme</div><div class="summary-value" id="overviewTheme">—</div><div class="summary-note">Used next time you sign in to Jyson</div></div>
+        <div class="summary-card"><div class="summary-label">Account name</div><div class="summary-value" id="overviewName">—</div><div class="summary-note">Shown with your review</div></div>
       </div>
-
       <div class="action-band">
-        <div><h3>Need the latest desktop build?</h3><p>Download the official installer directly from the GitHub release.</p></div>
+        <div><h3>Get the latest Jyson</h3><p>The official installer, straight from the GitHub release.</p></div>
         <div class="actions">
-          <button class="btn btn-secondary" data-open-section="appearance">Appearance</button>
-          <button class="btn btn-primary" id="downloadBtn">Download Jyson AI</button>
+          <button class="btn btn-secondary" data-open-section="plan">See my plan</button>
+          <button class="btn btn-primary" id="downloadBtn">Download</button>
         </div>
       </div>
-      <div class="msg" id="dashMsg"></div>
-
       <div class="panel">
-        <h3>What your account does</h3>
-        <p class="panel-lede">The account is for entitlements and preferences. Your personal API keys and local AI model files stay in the desktop app, not on this page. Local inference and the separate Local-only privacy setting have different effects; read about <a href="privacy.html#desktop-modes">desktop privacy modes</a>.</p>
-        <div class="kv"><span>Basic desktop use</span><span>Available without an account</span></div>
-        <div class="kv"><span>Paid feature access</span><span>Connected to this account</span></div>
-        <div class="kv"><span>Theme preference</span><span>Synced on login</span></div>
+        <h3>What the account is for</h3>
+        <p class="panel-lede">Your plan and your theme. Your chats, notes, files and API keys stay in the app on your PC and never come to this website.</p>
       </div>
     </section>
 
     <section class="dash-section" id="section-plan">
-      <div class="dash-head"><div><div class="dash-kicker">Plan</div><h1>Subscription</h1><p>See the current entitlement before you pay for anything else.</p></div></div>
       <div class="panel">
-        <div class="kv"><span>Current tier</span><span id="dashTier">—</span></div>
-        <div class="kv"><span>Access source</span><span id="dashSource">—</span></div>
-        <div class="kv"><span>Valid until</span><span id="dashExpires">No fixed expiry</span></div>
-        <button class="btn btn-secondary block" id="upgradeBtn" style="margin-top:16px;">Show upgrade options</button>
-        <div id="upgradeOptions" class="hidden" style="margin-top:10px;display:grid;gap:8px;">
-          <button class="btn btn-primary block" id="upgradeMonthlyBtn">Monthly — €2 / month</button>
-          <button class="btn btn-secondary block" id="upgradeAnnualBtn">Annual — €20 / year</button>
+        <div class="summary-label">Your plan</div>
+        <div class="plan-now" id="dashTier">—</div>
+        <div class="summary-note" id="dashExpires">—</div>
+        <div class="summary-note" id="dashSource" hidden>—</div>
+
+        <div id="planChoose" class="hidden">
+          <label class="check-row" for="startNow"><input type="checkbox" id="startNow" /><span>Start my plan right away. I understand that if I withdraw in the first 14 days, I get back the part I didn't use.</span></label>
+          <div class="plan-cards">
+            <div class="plan-card"><h3>Monthly</h3><div class="plan-price">€2 <small>/ month</small></div><p>Renews every month. Stop any time.</p><button class="btn btn-primary block" id="upgradeMonthlyBtn">Choose monthly</button></div>
+            <div class="plan-card"><h3>Annual</h3><div class="plan-price">€20 <small>/ year</small></div><p>Two months free compared to monthly.</p><button class="btn btn-secondary block" id="upgradeAnnualBtn">Choose annual</button></div>
+          </div>
+          <p class="panel-lede" style="margin-top:12px;">Payment is handled by Stripe. Card details never reach this website.</p>
         </div>
+
+        <div id="planManage" class="hidden">
+          <div class="plan-actions">
+            <button class="btn btn-secondary" id="renewalBtn">Stop renewal</button>
+            <button class="btn btn-secondary danger-btn hidden" id="withdrawBtn">Withdraw and get a refund</button>
+            <button class="btn btn-quiet" id="billingManageBtn">Payment method and invoices</button>
+          </div>
+          <p class="panel-lede" id="planManageNote" style="margin-top:12px;"></p>
+        </div>
+
+        <p class="panel-lede hidden" id="planManual" style="margin-top:10px;">This plan was given to you by the Jyson team. There is nothing to pay or cancel.</p>
         <div class="msg" id="upgradeMsg"></div>
-      </div>
-      <div class="panel">
-        <h3>Billing</h3>
-        <p class="panel-lede">Checkout is handled by Stripe. Jyson AI does not store card details on this website.</p>
-        <p class="panel-lede">Manage an existing Stripe subscription, payment method or invoice history. Cancelling renewal keeps access through the current billing period. Free and manually granted plans do not have a Stripe subscription to cancel.</p>
-        <button class="btn btn-secondary" id="billingManageBtn">Manage billing</button>
         <div class="msg" id="billingMsg" role="status" aria-live="polite"></div>
       </div>
-    </section>
-
-    <section class="dash-section" id="section-features">
-      <div class="dash-head"><div><div class="dash-kicker">App access</div><h1>Features on your tier</h1><p>This reflects the entitlement Jyson AI receives when you sign in.</p></div></div>
-      <div class="feature-list" id="featuresList"><div class="feature-row off"><span class="feature-mark">—</span><span class="feature-name">Loading…</span></div></div>
-      <div class="feature-note" id="futureUpdatesNote"></div>
+      <div class="panel">
+        <h3>What your plan includes</h3>
+        <div class="feature-list" id="featuresList" style="margin-top:12px;"><div class="feature-row off"><span class="feature-mark">—</span><span class="feature-name">Loading…</span></div></div>
+        <div class="feature-note" id="futureUpdatesNote"></div>
+      </div>
     </section>
 
     <section class="dash-section" id="section-appearance">
-      <div class="dash-head"><div><div class="dash-kicker">Appearance</div><h1>Desktop theme</h1><p>Choose from the themes included in your current tier.</p></div></div>
       <div class="panel">
+        <h3>App theme</h3>
+        <p class="panel-lede">Pick a theme from your plan. Jyson uses it next time you sign in.</p>
         <div class="theme-swatches" id="themeSwatches"></div>
         <div class="msg" id="themeMsg"></div>
       </div>
     </section>
 
     <section class="dash-section" id="section-account">
-      <div class="dash-head"><div><div class="dash-kicker">Account & security</div><h1>Profile and password</h1><p>Keep the public account name and login credentials current.</p></div></div>
       <div class="panel">
-        <div class="section-title">Account name</div>
+        <h3>Account name</h3>
         <div class="inline-row">
-          <div><label for="settingsName">Public account name</label><input id="settingsName" type="text" maxlength="64" aria-describedby="settingsNameHint" /><small id="settingsNameHint">1–32 letters, digits, spaces, dots, underscores or hyphens. Names are unique regardless of letter case.</small></div>
+          <div><label for="settingsName">Shown with your review</label><input id="settingsName" type="text" maxlength="64" aria-describedby="settingsNameHint" /><small id="settingsNameHint">Up to 32 characters: letters, numbers, spaces and <kbd>.</kbd> <kbd>_</kbd> <kbd>-</kbd></small></div>
           <button class="btn btn-primary" id="settingsSave">Save</button>
         </div>
         <div class="msg" id="settingsMsg"></div>
       </div>
       <div class="panel">
-        <div class="section-title">Your data</div>
-        <p class="panel-lede">Download a basic export of your profile, plan and billing identifiers, review, Terms confirmation records and selected sign-in account details, or remove your public review. Payment-provider records, server logs and desktop data are not included. Manage subscription renewal from the Billing panel. Full account deletion remains a commercial-launch blocker.</p>
-        <div class="data-actions"><button class="btn btn-secondary" id="exportDataBtn">Export account data</button><button class="btn btn-quiet danger-action" id="deleteReviewBtn">Delete my review</button></div>
-        <div class="msg" id="dataMsg" aria-live="polite"></div>
-        <div class="account-legal-links"><a href="support.html">Support</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refunds.html">Refunds</a><a href="cookies.html">Tracking</a><a href="security.html">Security</a></div>
-      </div>
-      <div class="panel">
-        <div class="section-title">Password</div>
+        <h3>Password</h3>
         <div class="stack">
-          <div><label for="settingsNewPass">New password</label><input id="settingsNewPass" type="password" autocomplete="new-password" minlength="12" placeholder="12 characters or more" /></div>
-          <div><label for="settingsNewPass2">Confirm password</label><input id="settingsNewPass2" type="password" autocomplete="new-password" placeholder="Type it again" /></div>
+          <div><label for="settingsNewPass">New password</label><input id="settingsNewPass" type="password" autocomplete="new-password" minlength="12" placeholder="At least 12 characters" /></div>
+          <div><label for="settingsNewPass2">Type it again</label><input id="settingsNewPass2" type="password" autocomplete="new-password" placeholder="Same password" /></div>
           <button class="btn btn-primary" id="settingsPassSave">Change password</button>
         </div>
         <div class="msg" id="settingsPassMsg"></div>
       </div>
+      <div class="panel">
+        <h3>Your data</h3>
+        <p class="panel-lede">Download what this website keeps about you (profile, plan, review, Terms records), or delete your review. Payment records stay with Stripe. To delete the whole account, email support.</p>
+        <div class="data-actions"><button class="btn btn-secondary" id="exportDataBtn">Download my data</button><button class="btn btn-quiet danger-action" id="deleteReviewBtn">Delete my review</button></div>
+        <div class="msg" id="dataMsg" aria-live="polite"></div>
+        <div class="account-legal-links"><a href="support.html">Support</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refunds.html">Refunds</a><a href="cookies.html">Cookies</a><a href="security.html">Security</a></div>
+      </div>
     </section>
 
     <section class="dash-section" id="section-feedback">
-      <div class="dash-head"><div><div class="dash-kicker">Feedback</div><h1>Leave a review</h1><p>Your review appears on the homepage with your account name. Saving again edits the same review.</p></div></div>
       <div class="panel">
+        <h3>Your review</h3>
+        <p class="panel-lede">Shown on the home page with your account name. Saving again changes the same review.</p>
         <div class="star-picker" id="starPicker" aria-label="Review rating"><button type="button" data-star="1" aria-label="1 star">★</button><button type="button" data-star="2" aria-label="2 stars">★</button><button type="button" data-star="3" aria-label="3 stars">★</button><button type="button" data-star="4" aria-label="4 stars">★</button><button type="button" data-star="5" aria-label="5 stars">★</button></div>
-        <textarea id="reviewBody" maxlength="500" rows="4" placeholder="What has your experience with Jyson AI been like?"></textarea>
+        <textarea id="reviewBody" maxlength="500" rows="4" placeholder="How has Jyson worked for you?"></textarea>
         <button class="btn btn-primary" id="reviewSave" style="margin-top:10px;">Save review</button>
         <div class="msg" id="reviewMsg"></div>
       </div>
       <div class="panel">
         <h3>Need help instead?</h3>
-        <p class="panel-lede">For account, billing or privacy questions, email <a href="mailto:jysenai.support@gmail.com">jysenai.support@gmail.com</a>. Use GitHub for non-sensitive, reproducible bugs. The same support channels are available on every plan; no priority response time is promised. Never send passwords, API keys or full payment-card details.</p>
-        <a class="btn btn-secondary" href="support.html">Open support</a>
+        <p class="panel-lede">Email <a href="mailto:jysenai.support@gmail.com">jysenai.support@gmail.com</a>. Never send passwords, API keys or card numbers.</p>
       </div>
     </section>
   </main>
@@ -272,4 +267,3 @@
 <script src="account.js" defer></script>
 </body>
 </html>
-

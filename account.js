@@ -45,7 +45,7 @@ function canonicalPublicName(value) {
   const name = value.normalize("NFC").replace(/^ +| +$/g, "").replace(/ +/g, " ");
   return [...name].length >= 1 && [...name].length <= 32 && /^[\p{L}0-9 _.-]+$/u.test(name) ? name : null;
 }
-const ACCOUNT_NAME_HINT = "Use 1–32 letters, digits, spaces, dots, underscores or hyphens.";
+const ACCOUNT_NAME_HINT = "Use up to 32 characters: letters, numbers, spaces and . _ -";
 
 if (DESKTOP_LOGIN_MODE) {
   el("authTitle").textContent = "Connect desktop";
@@ -120,6 +120,7 @@ function showWrap(which){
   el("authWrap").classList.toggle("hidden", which !== "auth");
   el("brokenWrap").classList.toggle("hidden", which !== "broken");
   el("dashShell").classList.toggle("hidden", which !== "dash");
+  el("headerUser").classList.toggle("hidden", which !== "dash");
   const shown = which === "auth" ? el("authView") : which === "broken" ? el("brokenView") : el("dashShell");
   fadeIn(shown);
 }
@@ -276,34 +277,58 @@ el("su_resend").onclick = async () => {
   startResendCooldown();
 };
 
+// Each sign-up field's problem, or "" when it is fine.
+function signupProblems() {
+  const name = el("su_name").value, email = el("su_email").value.trim(), pass = el("su_pass").value;
+  return {
+    su_name: !name.trim() ? "Choose an account name." : canonicalPublicName(name) ? ""
+      : [...name.trim()].length > 32 ? `Too long: 32 characters at most (now ${[...name.trim()].length}).`
+      : "Only letters, numbers, spaces and . _ - are allowed.",
+    su_email: !email ? "Enter your email." : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? "" : "This doesn't look like an email address.",
+    su_pass: !pass ? "Choose a password." : pass.length >= 12 ? "" : `At least 12 characters (now ${pass.length}).`,
+    su_legal: el("su_legal").checked ? "" : "Tick this to create an account.",
+  };
+}
+const signupTouched = new Set();
+// Fields turn red only once touched (or after a click on the button); the button stays dimmed until all is fine.
+function paintSignup(showAll = false) {
+  const problems = signupProblems();
+  for (const [id, problem] of Object.entries(problems)) {
+    const show = Boolean(problem) && (showAll || signupTouched.has(id));
+    if (showAll) signupTouched.add(id);
+    el(id).setAttribute("aria-invalid", String(show));
+    el(id + "_err").textContent = show ? problem : "";
+    if (id === "su_legal") el("su_legal_row").classList.toggle("invalid", show);
+  }
+  const ok = Object.values(problems).every((p) => !p);
+  el("su_submit").setAttribute("aria-disabled", String(!ok));
+  return ok;
+}
+for (const id of ["su_name", "su_email", "su_pass", "su_legal"]) {
+  const field = el(id);
+  field.addEventListener("input", () => paintSignup());
+  field.addEventListener("change", () => { signupTouched.add(id); paintSignup(); });
+  field.addEventListener("blur", () => { if (id !== "su_legal" && field.value) signupTouched.add(id); paintSignup(); });
+}
+
 el("su_submit").onclick = async () => {
   hideMsg("authMsg");
+  if (el("su_submit").disabled) return;
+  if (!paintSignup(true)) {
+    const first = Object.entries(signupProblems()).find(([, p]) => p);
+    if (first) el(first[0]).focus?.();
+    return;
+  }
   const account_name = canonicalPublicName(el("su_name").value);
   const email = el("su_email").value.trim();
   const password = el("su_pass").value;
-
-  if (!el("su_name").value || !email || !password) {
-    showMsg("authMsg", "Fill in all three fields.", "error");
-    return;
-  }
-  if (!account_name) {
-    showMsg("authMsg", ACCOUNT_NAME_HINT, "error");
-    return;
-  }
   el("su_name").value = account_name;
-  if (!el("su_legal").checked) {
-    showMsg("authMsg", "Please accept the Terms and read the Privacy Notice before creating an account.", "error");
-    return;
-  }
-  if (password.length < 12) {
-    showMsg("authMsg", "Password needs to be at least 12 characters.", "error");
-    return;
-  }
 
   setBusy(el("su_submit"), true);
   const { data, error } = await supa.auth.signUp({
     email, password,
-    options: { data: { account_name } },
+    // The ticked box above; recorded on the server at the first sign-in (refreshLegalState).
+    options: { data: { account_name, legal_agreed_version: LEGAL_RELEASE.version } },
   });
 
   if (error) {
@@ -363,24 +388,26 @@ el("brokenLogoutBtn").onclick = doLogout;
 
 el("downloadBtn").onclick = () => { window.location.href = DOWNLOAD_URL; };
 
-el("upgradeBtn").onclick = () => {
-  el("upgradeOptions").classList.toggle("hidden");
-};
-
 async function startCheckout(tierKey) {
   hideMsg("upgradeMsg");
   if (tierKey !== "monthly" && tierKey !== "annual") {
     showMsg("upgradeMsg", "Unknown plan.", "error");
     return;
   }
+  if (!el("startNow").checked) {
+    el("startNow").closest?.(".check-row")?.classList.add("invalid");
+    showMsg("upgradeMsg", "Tick the box above first, so your plan can start right away.", "error");
+    return;
+  }
   if (!await refreshLegalState()) {
-    showMsg("upgradeMsg", "Confirm the current Terms above before starting a new purchase.", "error");
+    showMsg("upgradeMsg", "Agree to the current Terms at the top of this page first.", "error");
     el("legalPanel").scrollIntoView({ block: "start", behavior: "auto" });
     return;
   }
-  showMsg("upgradeMsg", "Redirecting to checkout...", "ok");
+  showMsg("upgradeMsg", "Opening checkout...", "ok");
   const { data, error } = await supa.functions.invoke("create-checkout", {
-    body: { plan: tierKey },
+    // The buyer's request to start now (EU withdrawal rules): a refund on withdrawal is then the unused part.
+    body: { plan: tierKey, immediate_start: true },
   });
   if (error) {
     showMsg("upgradeMsg", "Couldn't start checkout: " + error.message, "error");
@@ -414,10 +441,72 @@ async function openBillingPortal() {
   } catch {
     showMsg("billingMsg", "Could not open billing management. Try again in a moment.", "error");
   } finally {
-    setBusy(el("billingManageBtn"), false, "Manage billing");
+    setBusy(el("billingManageBtn"), false, "Payment method and invoices");
   }
 }
 el("billingManageBtn").onclick = openBillingPortal;
+el("startNow").addEventListener("change", () => el("startNow").closest?.(".check-row")?.classList.remove("invalid"));
+
+// Paid plan: stop/restart renewal and the EU 14-day withdrawal, all through
+// manage-subscription (the server checks the account, the dates and the amount).
+let subscriptionState = null;
+async function subscriptionCall(action) {
+  const { data, error } = await supa.functions.invoke("manage-subscription", { body: { action } });
+  if (error) {
+    let message = "Billing is not reachable right now. Try again in a moment.";
+    try { message = (await error.context.json()).error || message; } catch {}
+    throw new Error(message);
+  }
+  return data;
+}
+const money = (cents, currency) => new Intl.NumberFormat(undefined, { style: "currency", currency: (currency || "eur").toUpperCase() }).format(cents / 100);
+const day = (iso) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+
+function renderSubscription(s) {
+  subscriptionState = s;
+  el("renewalBtn").textContent = s.cancel_at_period_end ? "Turn renewal back on" : "Stop renewal";
+  el("dashExpires").textContent = s.cancel_at_period_end
+    ? `Ends on ${day(s.current_period_end)}. It will not renew.`
+    : `Renews on ${day(s.current_period_end)}.`;
+  el("withdrawBtn").classList.toggle("hidden", !s.can_withdraw);
+  el("planManageNote").textContent = s.can_withdraw
+    ? `You can withdraw until ${day(s.withdraw_until)}. You would get back ${money(s.refund_cents, s.currency)} (the part you haven't used) and the plan ends at once.`
+    : "Stopping renewal keeps your plan until the end of the period you paid for.";
+}
+
+async function loadSubscription() {
+  hideMsg("billingMsg");
+  try { renderSubscription(await subscriptionCall("status")); }
+  catch (e) { showMsg("billingMsg", e.message, "error"); }
+}
+
+el("renewalBtn").onclick = async () => {
+  if (!subscriptionState) return;
+  const stopping = !subscriptionState.cancel_at_period_end;
+  if (stopping && !window.confirm(`Stop renewal? You keep your plan until ${day(subscriptionState.current_period_end)}.`)) return;
+  setBusy(el("renewalBtn"), true);
+  try {
+    renderSubscription(await subscriptionCall(stopping ? "stop_renewal" : "resume"));
+    showMsg("billingMsg", stopping ? "Renewal stopped. Nothing more will be charged." : "Renewal is back on.", "ok");
+  } catch (e) { showMsg("billingMsg", e.message, "error"); }
+  finally { el("renewalBtn").disabled = false; }
+};
+
+el("withdrawBtn").onclick = async () => {
+  const s = subscriptionState;
+  if (!s?.can_withdraw) return;
+  if (!window.confirm(`Withdraw from your plan?\n\nYou get back ${money(s.refund_cents, s.currency)}, and your paid features stop right now.`)) return;
+  setBusy(el("withdrawBtn"), true, "Withdrawing...");
+  try {
+    const result = await subscriptionCall("withdraw");
+    showMsg("billingMsg", `Done. ${money(result.refund_cents, result.currency)} is on its way back to your card (banks take 5-10 days). Your plan has ended.`, "ok");
+    el("planManage").classList.add("hidden");
+    setTimeout(refreshSession, 2500);
+  } catch (e) {
+    showMsg("billingMsg", e.message, "error");
+    setBusy(el("withdrawBtn"), false, "Withdraw and get a refund");
+  }
+};
 
 el("settingsSave").onclick = async () => {
   hideMsg("settingsMsg");
@@ -444,6 +533,7 @@ el("settingsSave").onclick = async () => {
   el("settingsName").value = newName;
   el("dashName").textContent = newName;
   el("dashAvatar").textContent = newName.charAt(0).toUpperCase();
+  if (el("headerName")) { el("headerName").textContent = newName; el("headerAvatar").textContent = newName.charAt(0).toUpperCase(); }
 };
 
 el("settingsPassSave").onclick = async () => {
@@ -598,9 +688,10 @@ async function refreshSession(){
 
   showWrap("dash");
   const displayTier = effectiveEntitlement.tiers?.display_name || effectiveEntitlement.tier_id;
-  const sourceLabel = effectiveEntitlement.tier_source === "manual" ? "Manually granted" :
-                      effectiveEntitlement.tier_source === "stripe" ? "Paid subscription" :
-                      effectiveEntitlement.tier_source === "expired" ? "Plan expired" : "Free signup";
+  const source = effectiveEntitlement.tier_source;
+  const sourceLabel = source === "manual" ? "Given by the Jyson team" :
+                      source === "stripe" ? "Paid plan" :
+                      source === "expired" ? "Plan ended" : "Free";
   const normalizedTheme = LEGACY_THEME_ALIASES[effectiveEntitlement.preferred_theme] ||
                           effectiveEntitlement.preferred_theme ||
                           effectiveEntitlement.tiers?.allowed_themes?.[0] || "Frost";
@@ -609,16 +700,25 @@ async function refreshSession(){
   el("dashAvatar").textContent = profile.account_name.charAt(0).toUpperCase();
   el("dashTier").textContent = displayTier;
   el("dashSource").textContent = sourceLabel;
-  el("sidebarTier").textContent = displayTier + " · " + sourceLabel;
+  el("sidebarTier").textContent = displayTier;
+  el("headerName").textContent = profile.account_name;
+  el("headerAvatar").textContent = profile.account_name.charAt(0).toUpperCase();
   el("overviewName").textContent = profile.account_name;
-  el("overviewEmail").textContent = session.user.email || "Signed-in account";
+  el("overviewEmail").textContent = session.user.email || "Signed in";
   el("overviewPlan").textContent = displayTier;
   el("overviewPlanNote").textContent = sourceLabel;
   el("overviewTheme").textContent = normalizedTheme;
   el("dashExpires").textContent = Number.isFinite(expiresAt)
-    ? (expiresAt <= Date.now() ? "Expired " : "Through ") + new Date(expiresAt).toLocaleDateString()
-    : "No fixed expiry";
+    ? (expiresAt <= Date.now() ? "Ended " : "Until ") + new Date(expiresAt).toLocaleDateString()
+    : source === "manual" ? sourceLabel : "";
   el("settingsName").value = profile.account_name;
+  // Show only what fits this plan: choices when there is none, controls for a paid one, a note for a given one.
+  const paid = source === "stripe" && effectiveEntitlement.tier_id !== "free";
+  el("planChoose").classList.toggle("hidden", paid || source === "manual");
+  el("planManage").classList.toggle("hidden", !paid);
+  el("planManual").classList.toggle("hidden", source !== "manual");
+  if (paid) loadSubscription();
+  if (window.location.hash === "#plan") openDashboardSection("plan");
 
   const checkoutState = params.get("checkout");
   if (checkoutState === "success") {
@@ -634,67 +734,78 @@ async function refreshSession(){
   renderThemeSwatches(effectiveEntitlement.tiers?.allowed_themes || ["Frost"], normalizedTheme);
   loadOwnReview(uid);
   if (desktopCallback && !hasLegalAcceptance) {
-    showMsg("dashMsg", "Confirm the current Terms above to finish desktop sign-in. Billing management and account data remain available.", "warn");
+    showMsg("dashMsg", "Agree to the Terms above to finish signing in to the app.", "warn");
   }
 }
 
-// Server RPCs bind identity, document version and timestamp; editable Auth
-// metadata is never evidence of acceptance.
+// Server RPCs bind identity, document version and timestamp. Agreeing happens
+// once: the sign-up box (its version kept in the account's metadata) is
+// recorded through the same RPC at the first signed-in visit; only a new
+// version of the documents asks again, with one box. The metadata alone is
+// never treated as acceptance: only the server's ledger answer is.
+async function acceptCurrentLegal() {
+  const { data, error } = await supa.rpc("accept_current_legal", {
+    p_version: LEGAL_RELEASE.version,
+    p_terms_sha256: LEGAL_RELEASE.terms_sha256,
+    p_privacy_sha256: LEGAL_RELEASE.privacy_sha256,
+    p_accept_terms: true, p_ack_privacy: true,
+  });
+  return !error && data?.accepted === true && data.version === LEGAL_RELEASE.version &&
+    data.terms_sha256 === LEGAL_RELEASE.terms_sha256 && data.privacy_sha256 === LEGAL_RELEASE.privacy_sha256 &&
+    Number.isFinite(Date.parse(data.accepted_at));
+}
+
 async function refreshLegalState(expectedUserId) {
   el("legalTerms").checked = false;
-  el("legalPrivacy").checked = false;
   el("legalConfirmBtn").disabled = true;
   el("legalControls").classList.remove("hidden");
+  el("legalPanel").classList.remove("hidden");
+  hideMsg("legalMsg");
   try {
     const { data: { user }, error: authError } = await supa.auth.getUser();
-    if (authError || !user) throw new Error("Sign in again to confirm the Terms.");
+    if (authError || !user) throw new Error("Sign in again to continue.");
     if (expectedUserId && user.id !== expectedUserId) throw new Error("Your signed-in account changed. Reload this page.");
     const { data, error } = await supa.rpc("get_legal_acceptance_status");
-    if (error || !data) throw new Error("Could not check Terms confirmation. Retry in a moment.");
+    if (error || !data) throw new Error("Could not check the Terms right now. Try again in a moment.");
     if (data.version !== LEGAL_RELEASE.version || data.terms_sha256 !== LEGAL_RELEASE.terms_sha256 ||
         data.privacy_sha256 !== LEGAL_RELEASE.privacy_sha256) {
-      throw new Error("The legal documents changed. Reload this page before confirming.");
+      throw new Error("This page is out of date. Reload it.");
     }
     if (data.accepted === true && Number.isFinite(Date.parse(data.accepted_at))) {
-      el("legalControls").classList.add("hidden");
-      showMsg("legalMsg", "Version " + data.version + " confirmed on " + new Date(data.accepted_at).toLocaleString() + ".", "ok");
+      el("legalPanel").classList.add("hidden");
       return true;
     }
-    if (data.accepted !== false) throw new Error("Could not verify Terms confirmation.");
+    if (data.accepted !== false) throw new Error("Could not check the Terms right now.");
+    if (user.user_metadata?.legal_agreed_version === LEGAL_RELEASE.version && await acceptCurrentLegal()) {
+      el("legalPanel").classList.add("hidden");
+      return true;
+    }
     el("legalConfirmBtn").disabled = false;
-    showMsg("legalMsg", "Confirm version " + data.version + " before a new purchase or desktop sign-in.", "warn");
+    el("legalLede").textContent = data.version === user.user_metadata?.legal_agreed_version || !user.user_metadata?.legal_agreed_version
+      ? "Please agree to the current Terms. You only do this once, or again if they change."
+      : "The Terms or the Privacy Notice changed. Please have a look and agree to the new version.";
   } catch (error) {
-    showMsg("legalMsg", error.message || "Could not check Terms confirmation.", "error");
+    showMsg("legalMsg", error.message || "Could not check the Terms right now.", "error");
   }
   return false;
 }
 
 async function confirmCurrentLegal() {
   if (el("legalConfirmBtn").disabled) return;
-  if (!el("legalTerms").checked || !el("legalPrivacy").checked) {
-    showMsg("legalMsg", "Accept the Terms and acknowledge the Privacy Notice using both checkboxes.", "error");
+  if (!el("legalTerms").checked) {
+    showMsg("legalMsg", "Tick the box first.", "error");
     return;
   }
   setBusy(el("legalConfirmBtn"), true);
   let refreshed = false;
   try {
     const { data: { user }, error: authError } = await supa.auth.getUser();
-    if (authError || !user) throw new Error("Sign in again to confirm the Terms.");
-    const { data, error } = await supa.rpc("accept_current_legal", {
-      p_version: LEGAL_RELEASE.version,
-      p_terms_sha256: LEGAL_RELEASE.terms_sha256,
-      p_privacy_sha256: LEGAL_RELEASE.privacy_sha256,
-      p_accept_terms: true, p_ack_privacy: true,
-    });
-    if (error || data?.accepted !== true || data.version !== LEGAL_RELEASE.version ||
-        data.terms_sha256 !== LEGAL_RELEASE.terms_sha256 || data.privacy_sha256 !== LEGAL_RELEASE.privacy_sha256 ||
-        !Number.isFinite(Date.parse(data.accepted_at))) {
-      throw new Error("Confirmation could not be verified. Retry the status check; reload if the documents changed.");
-    }
+    if (authError || !user) throw new Error("Sign in again to continue.");
+    if (!await acceptCurrentLegal()) throw new Error("That didn't save. Try again; reload the page if it keeps failing.");
     await refreshSession();
     refreshed = true;
   } catch (error) {
-    showMsg("legalMsg", error.message || "Could not save confirmation.", "error");
+    showMsg("legalMsg", error.message || "That didn't save.", "error");
   } finally {
     // Preserve the status refresh's fail-closed button state.
     if (!refreshed) el("legalConfirmBtn").disabled = false;
@@ -754,7 +865,7 @@ function renderThemeSwatches(allowedThemes, preferred){
         showMsg("themeMsg", error.message, "error");
         return;
       }
-      showMsg("themeMsg", "Saved - applies next time you open Jyson AI", "ok");
+      showMsg("themeMsg", "Saved. Jyson uses it next time you sign in.", "ok");
     };
   });
 }
@@ -827,6 +938,6 @@ refreshSession();
   banner.textContent = "This page failed to start: " + fatalError.message +
     ". Reload the page; if it continues, use the project support link.";
   document.body.prepend(banner);
-  console.error("Jyson AI account.html fatal init error:", fatalError);
+  console.error("Jyson account.html fatal init error:", fatalError);
 }
 

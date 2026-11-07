@@ -1,4 +1,6 @@
 extensions_manifest.json -text
 extensions_manifest.json.sig -text
 vendor/** -text
+terms*.html -text
+privacy*.html -text
 *.png binary

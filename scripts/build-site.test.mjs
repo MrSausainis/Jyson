@@ -9,7 +9,7 @@ import { spawnSync } from "node:child_process";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const build = (directory) => spawnSync(process.execPath, [join(directory, "scripts/build-site.mjs")], { encoding: "utf8" });
 const files = (directory) => readdirSync(directory, { recursive: true, withFileTypes: true })
-  .filter((entry) => entry.isFile()).map((entry) => relative(directory, join(entry.parentPath, entry.name))).sort();
+  .filter((entry) => entry.isFile()).map((entry) => relative(directory, join(entry.parentPath, entry.name)).split("\\").join("/")).sort();
 const put = (directory, file, content) => {
   mkdirSync(dirname(join(directory, file)), { recursive: true });
   writeFileSync(join(directory, file), content);
