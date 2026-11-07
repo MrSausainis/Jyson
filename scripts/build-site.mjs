@@ -11,6 +11,7 @@ const publicFiles = [
   "index.html", "account.html", "donate.html", "404.html", "support.html",
   "privacy.html", "terms.html", "refunds.html", "cookies.html",
   "terms-2026-10-24.1.html", "privacy-2026-10-24.1.html",
+  "terms-2026-11-07.1.html", "privacy-2026-11-07.1.html",
   "security.html", "accessibility.html",
   "site.css", "site.js", "account.js", "favicon.svg", "logo.svg",
   "vendor/supabase-2.117.2.min.js",

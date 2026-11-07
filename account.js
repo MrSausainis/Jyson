@@ -13,9 +13,9 @@ const RESEND_COOLDOWN_SECONDS = 30;
 // release membership (until 30 Nov 2027). Flip with create-checkout's SALES_OPEN at launch.
 const SALES_OPEN = false;
 const LEGAL_RELEASE = {
-  version: "2026-10-24.1",
-  terms_sha256: "3a2cdc7586a21e6d233bfee56d214a31a132e797c7ba3d2f14c65aad3829ba67",
-  privacy_sha256: "2b267fa699a39066ffcfec454cd15f5160db9e7b56a006a56f1a2b266f9adc0f",
+  version: "2026-11-07.1",
+  terms_sha256: "948f6d1937824280b2d6310751f90a294deb386943b7dcdeb65419126d93dbbb",
+  privacy_sha256: "d067680684e5b3213a5bef97c9c681316cca10c2f55b30c34fb40945dd940e9e",
 };
 
 // The app's themes (jyson_theme.THEMES): background, surface and accent.
