@@ -3,11 +3,11 @@
 // Phase 2B checkout hardening
 //
 // Compatibility:
-// - existing website clients may continue sending { price_id }
-// - future clients may send { plan: "monthly" | "annual" }
+// - clients send { plan: "monthly" | "annual" | "lifetime" }; an old { price_id }
+//   must name a legacy price of the same plan
 //
 // Security:
-// - only the two production Jyson prices are accepted server-side
+// - only the price holding the plan's lookup key is accepted server-side
 // - Stripe price/product state and tier metadata are revalidated server-side
 // - caller identity comes only from the verified Supabase JWT
 //
@@ -15,35 +15,48 @@
 // box) is saved on the new subscription's metadata. manage-subscription reads
 // it: with it, an EU withdrawal refunds the unused part; without it, all of it.
 // It records the buyer's request only and authorizes nothing.
+//
+// 2026-11-14 (owner): the prices are found by their Stripe lookup key
+// (jyson_monthly / jyson_annual / jyson_lifetime) and must carry the matching
+// tier_id metadata, and their amount must equal the admin panel's price
+// (app_config 'prices') - a new price in Stripe takes over by moving the lookup
+// key to it. { plan: "lifetime" } is a one-time payment, sold only while
+// public.offer_status() says the launch offer is open. A Jyson discount code the
+// account saved (public.checkout_discount) becomes a Stripe coupon on the
+// checkout; stripe-webhook marks it used when the checkout completes.
 // ============================================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2.95.0";
 import Stripe from "npm:stripe@22.6.0";
 
-// No paid sales until the seller is registered (owner, 7 Nov 2026). Every new account gets the free release
-// membership instead. Flip to true at launch. Lifetime (a one-time payment) is not sold here yet: it needs its own
-// Stripe price, mode "payment", and jyson_private.lifetime_open() asked before the session is made.
+// No paid sales until the seller is registered (owner, 7 Nov 2026). Accounts use Free or the free trial meanwhile.
+// Flip to true at launch (and checkout_open in the admin panel, which the site and the app read).
 const SALES_OPEN = false;
 
 const ACCOUNT_PAGE_URL = "https://get-jyson.netlify.app/account";
 const WEBSITE_ORIGIN = "https://get-jyson.netlify.app";
 
 const PLANS = {
-  monthly: {
-    priceId: "price_1UCPzSJ78TGxjoZzD8Pc4ppZ",
-    tierId: "monthly",
-  },
-  annual: {
-    priceId: "price_1UD87kJ78TGxjoZzyIHNEkQG",
-    tierId: "annual",
-  },
+  monthly: { lookupKey: "jyson_monthly", tierId: "monthly", mode: "subscription", interval: "month" },
+  annual: { lookupKey: "jyson_annual", tierId: "annual", mode: "subscription", interval: "year" },
+  lifetime: { lookupKey: "jyson_lifetime", tierId: "lifetime", mode: "payment", interval: null },
 } as const;
 
 type PlanId = keyof typeof PLANS;
 
-const PRICE_TO_PLAN = new Map<string, PlanId>(
-  Object.entries(PLANS).map(([plan, config]) => [config.priceId, plan as PlanId]),
-);
+// The prices made before the lookup keys (2 / 20 EUR): an old open checkout made with them is still recognised.
+const LEGACY_PRICES: Record<string, PlanId> = {
+  price_1UCPzSJ78TGxjoZzD8Pc4ppZ: "monthly",
+  price_1UD87kJ78TGxjoZzyIHNEkQG: "annual",
+};
+
+function planOfPrice(price: Stripe.Price | null | undefined): PlanId | null {
+  if (!price) return null;
+  for (const [plan, config] of Object.entries(PLANS)) if (price.lookup_key === config.lookupKey) return plan as PlanId;
+  return LEGACY_PRICES[price.id] ?? null;
+}
+
+type Discount = { code: string; kind: "percent" | "amount"; value: number };
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": WEBSITE_ORIGIN,
@@ -66,6 +79,7 @@ type Attempt = {
   id: string;
   startedAt: number;
   plan: PlanId;
+  code?: string | null;
   customerParams: Stripe.CustomerCreateParams;
   sessionParams?: Stripe.Checkout.SessionCreateParams;
   sessionId?: string;
@@ -85,11 +99,66 @@ async function listAll<T extends { id: string }>(fetchPage: (cursor?: string) =>
   throw new CheckoutError("Could not verify existing billing state. Try again later.", 503);
 }
 
-function assertOwner(session: Stripe.Checkout.Session, customerId: string, userId: string) {
+function assertOwner(session: Stripe.Checkout.Session, customerId: string, userId: string, mode?: string) {
   const customer = typeof session.customer === "string" ? session.customer : session.customer?.id;
-  if (customer !== customerId || session.client_reference_id !== userId || session.mode !== "subscription") {
+  const modeOk = mode ? session.mode === mode : session.mode === "subscription" || session.mode === "payment";
+  if (customer !== customerId || session.client_reference_id !== userId || !modeOk) {
     throw new CheckoutError("Existing checkout requires billing support.");
   }
+}
+
+// The one active price with this plan's lookup key, checked against its tier metadata and the admin panel's price.
+async function currentPrice(plan: PlanId, prices: Record<string, unknown>): Promise<Stripe.Price> {
+  const expected = PLANS[plan];
+  const found = await stripe.prices.list({ lookup_keys: [expected.lookupKey], active: true, limit: 2, expand: ["data.product"] });
+  if (found.data.length !== 1) {
+    console.error(`create-checkout: ${found.data.length} active prices for ${expected.lookupKey}`);
+    throw new CheckoutError("This plan is temporarily unavailable", 503);
+  }
+  const price = found.data[0];
+  const shapeOk = expected.mode === "subscription"
+    ? price.type === "recurring" && price.recurring?.interval === expected.interval && price.recurring.interval_count === 1
+    : price.type === "one_time";
+  let product: Stripe.Product | null = null;
+  if (price.product && typeof price.product !== "string" && !price.product.deleted) product = price.product;
+  else if (typeof price.product === "string") {
+    const fetched = await stripe.products.retrieve(price.product);
+    if (!fetched.deleted) product = fetched;
+  }
+  const metadataTier = price.metadata?.tier_id || product?.metadata?.tier_id;
+  const listed = Number(prices[plan]);
+  const currency = String(prices.currency || "EUR").toLowerCase();
+  const amountOk = Number.isFinite(listed) && listed > 0 && price.unit_amount === Math.round(listed * 100) && price.currency === currency;
+  if (!shapeOk || !product || !product.active || metadataTier !== expected.tierId) {
+    console.error(`create-checkout: the ${plan} price is not usable (shape ${shapeOk}, tier ${metadataTier ?? "missing"})`);
+    throw new CheckoutError("This plan is temporarily unavailable", 503);
+  }
+  if (!amountOk) {
+    console.error(`create-checkout: the ${plan} price in Stripe differs from the admin panel's price`);
+    throw new CheckoutError("Prices are being updated - try again a little later.", 503);
+  }
+  return price;
+}
+
+// A saved Jyson code as a Stripe coupon (made once; the id names the code and its value, so a changed code gets a new one).
+async function couponFor(discount: Discount, currency: string): Promise<string> {
+  const value = discount.kind === "percent" ? `${discount.value}pct` : `${Math.round(discount.value * 100)}${currency}`;
+  const id = `jyson-${discount.code}-${value}`.toLowerCase().replace(/[^a-z0-9-]/g, "-").slice(0, 120);
+  try {
+    const coupon = await stripe.coupons.retrieve(id);
+    if (!coupon.valid) throw new CheckoutError("Your discount code can't be used right now - contact support.", 409);
+    return coupon.id;
+  } catch (error) {
+    if (error instanceof CheckoutError) throw error;
+    if ((error as { code?: string }).code !== "resource_missing") throw error;
+  }
+  const coupon = await stripe.coupons.create({
+    id, duration: "once", name: `Jyson code ${discount.code}`.slice(0, 40), metadata: { jyson_code: discount.code },
+    ...(discount.kind === "percent"
+      ? { percent_off: discount.value }
+      : { amount_off: Math.round(discount.value * 100), currency }),
+  }, { idempotencyKey: `jyson-coupon-${id}` });
+  return coupon.id;
 }
 
 function assertRetryWindow(attempt: Attempt) {
@@ -111,28 +180,15 @@ function isPlanId(value: unknown): value is PlanId {
   return typeof value === "string" && Object.prototype.hasOwnProperty.call(PLANS, value);
 }
 
+// { plan } only; an old client's { price_id } must name a legacy price of the same plan.
 function resolveRequestedPlan(body: Record<string, unknown>): PlanId | null {
   const requestedPlan = body.plan;
   const requestedPrice = body.price_id;
-
-  let planFromName: PlanId | null = null;
-  let planFromPrice: PlanId | null = null;
-
-  if (requestedPlan !== undefined) {
-    if (!isPlanId(requestedPlan)) return null;
-    planFromName = requestedPlan;
+  if (!isPlanId(requestedPlan)) {
+    return requestedPlan === undefined && typeof requestedPrice === "string" ? LEGACY_PRICES[requestedPrice] ?? null : null;
   }
-
-  if (requestedPrice !== undefined) {
-    if (typeof requestedPrice !== "string") return null;
-    planFromPrice = PRICE_TO_PLAN.get(requestedPrice) ?? null;
-    if (!planFromPrice) return null;
-  }
-
-  if (!planFromName && !planFromPrice) return null;
-  if (planFromName && planFromPrice && planFromName !== planFromPrice) return null;
-
-  return planFromName ?? planFromPrice;
+  if (requestedPrice !== undefined && LEGACY_PRICES[String(requestedPrice)] !== requestedPlan) return null;
+  return requestedPlan;
 }
 
 Deno.serve(async (req: Request) => {
@@ -144,7 +200,7 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Method not allowed" }, 405);
   }
   if (!SALES_OPEN) {
-    return jsonResponse({ error: "Paid plans are not on sale yet. Every new account gets all features free until 30 November 2027." }, 403);
+    return jsonResponse({ error: "Paid plans are not on sale yet. Use Free or the free trial on your account page meanwhile." }, 403);
   }
 
   let admin: ReturnType<typeof createClient> | undefined;
@@ -166,8 +222,6 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: "Unknown or unsupported Jyson plan" }, 400);
     }
     const immediateStart = body.immediate_start === true;
-
-    const expected = PLANS[plan];
 
     // Verify the authenticated caller using their own Authorization header.
     const authHeader = req.headers.get("Authorization") ?? "";
@@ -207,33 +261,18 @@ Deno.serve(async (req: Request) => {
       attempt = next;
     };
 
-    // Server-side price validation. Even if the client tampers with its body,
-    // only the exact production Jyson price IDs above can reach this point.
-    const price = await stripe.prices.retrieve(expected.priceId, { expand: ["product"] });
-    if (!price.active || price.type !== "recurring" || !price.recurring) {
-      console.error(`create-checkout: configured ${plan} price is not an active recurring price`);
-      return jsonResponse({ error: "This plan is temporarily unavailable" }, 503);
-    }
-
-    let product: Stripe.Product | null = null;
-    if (price.product && typeof price.product !== "string" && !price.product.deleted) {
-      product = price.product;
-    } else if (typeof price.product === "string") {
-      const fetched = await stripe.products.retrieve(price.product);
-      if (!fetched.deleted) product = fetched;
-    }
-
-    if (!product || !product.active) {
-      console.error(`create-checkout: configured ${plan} product is missing or inactive`);
-      return jsonResponse({ error: "This plan is temporarily unavailable" }, 503);
-    }
-
-    const metadataTier = price.metadata?.tier_id || product.metadata?.tier_id;
-    if (metadataTier !== expected.tierId) {
-      console.error(
-        `create-checkout: configured ${plan} price/product tier metadata mismatch (got ${metadataTier ?? "missing"})`,
-      );
-      return jsonResponse({ error: "This plan is temporarily unavailable" }, 503);
+    // Server-side price validation: only the price holding this plan's lookup key, with the matching tier
+    // metadata and the admin panel's amount, can reach the checkout - whatever the client sent.
+    const { data: config, error: configError } = await supabaseAdmin.from("app_config").select("value").eq("key", "prices").maybeSingle();
+    if (configError || !config?.value) return jsonResponse({ error: "This plan is temporarily unavailable" }, 503);
+    const listedPrices = config.value as Record<string, unknown>;
+    const currency = String(listedPrices.currency || "EUR").toLowerCase();
+    const price = await currentPrice(plan, listedPrices);
+    if (plan === "lifetime") {
+      const { data: offer, error: offerError } = await supabaseAdmin.rpc("offer_status");
+      if (offerError || offer?.lifetime?.open !== true) {
+        return jsonResponse({ error: "The lifetime offer is closed (sold out or ended)." }, 409);
+      }
     }
 
     const { data: entitlement, error: entitlementError } = await supabaseAdmin
@@ -259,6 +298,16 @@ Deno.serve(async (req: Request) => {
         409,
       );
     }
+    if (entitlement.tier_source === "stripe" && entitlement.tier_id === "lifetime") {
+      return jsonResponse({ error: "This account already has lifetime - there is nothing more to buy." }, 409);
+    }
+
+    // A discount code this account saved and has not used yet (the newest); it rides on the attempt below.
+    const { data: saved, error: savedError } = await supabaseAdmin.rpc("checkout_discount", { p_user_id: user.id });
+    if (savedError) return jsonResponse({ error: "Could not prepare checkout" }, 500);
+    const discount: Discount | null = saved && (saved.kind === "percent" || saved.kind === "amount") && Number(saved.value) > 0
+      ? { code: String(saved.code), kind: saved.kind, value: Number(saved.value) } : null;
+    const code = discount?.code ?? null;
 
     let customerId: string | null = entitlement.stripe_customer_id;
     let open: Stripe.Checkout.Session[] = [];
@@ -271,7 +320,7 @@ Deno.serve(async (req: Request) => {
       }
       open = (await listAll<Stripe.Checkout.Session>((cursor) => stripe.checkout.sessions.list({
         customer: customerId!, status: "open", limit: 100, ...(cursor ? { starting_after: cursor } : {}),
-      }))).filter((s) => s.mode === "subscription");
+      }))).filter((s) => s.mode === "subscription" || (s.mode === "payment" && s.metadata?.jyson_plan === "lifetime"));
       if (open.length > 1) throw new CheckoutError("Multiple existing checkouts require billing support.");
       for (const session of open) assertOwner(session, customerId, user.id);
     }
@@ -286,7 +335,7 @@ Deno.serve(async (req: Request) => {
       if (!attempt) {
         const lines = await stripe.checkout.sessions.listLineItems(session.id, { limit: 2 });
         const previousPlan = lines.data.length === 1 && !lines.has_more && lines.data[0].quantity === 1
-          ? PRICE_TO_PLAN.get(lines.data[0].price?.id ?? "") : null;
+          ? planOfPrice(lines.data[0].price) : null;
         if (!previousPlan) throw new CheckoutError("Existing checkout uses an unsupported plan.");
         await save({ id: crypto.randomUUID(), startedAt: Date.now(), plan: previousPlan, customerParams: {}, sessionId: session.id });
       } else if (!attempt.sessionId) {
@@ -296,8 +345,10 @@ Deno.serve(async (req: Request) => {
 
     if (attempt?.sessionId) {
       let session = await stripe.checkout.sessions.retrieve(attempt.sessionId);
-      assertOwner(session, customerId!, user.id);
-      if (session.status === "complete") {
+      assertOwner(session, customerId!, user.id, PLANS[attempt.plan].mode);
+      if (session.status === "complete" && session.mode === "payment") {
+        throw new CheckoutError("Your lifetime purchase went through - refresh your plan in a moment.");
+      } else if (session.status === "complete") {
         const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
         if (!subscriptionId) throw new CheckoutError("Previous checkout is still being processed.");
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
@@ -306,7 +357,7 @@ Deno.serve(async (req: Request) => {
           throw new CheckoutError("Previous checkout is complete. Manage the existing subscription.");
         }
       } else if (session.status === "open") {
-        if (attempt.plan === plan) {
+        if (attempt.plan === plan && (attempt.code ?? null) === code) {
           if (!session.url) throw new CheckoutError("Checkout is temporarily unavailable.", 502);
           return jsonResponse({ url: session.url });
         }
@@ -322,7 +373,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!attempt) {
-      await save({ id: crypto.randomUUID(), startedAt: Date.now(), plan,
+      await save({ id: crypto.randomUUID(), startedAt: Date.now(), plan, code,
         customerParams: { ...(user.email ? { email: user.email } : {}), metadata: { supabase_uid: user.id } },
       });
     }
@@ -339,28 +390,39 @@ Deno.serve(async (req: Request) => {
     }
     if (!attempt!.sessionParams) {
       const original = PLANS[attempt!.plan];
-      const sessionParams: Stripe.Checkout.SessionCreateParams = {
-        mode: "subscription", customer: customerId, client_reference_id: user.id,
-        line_items: [{ price: original.priceId, quantity: 1 }],
+      // A recovered older attempt keeps its own plan and code, never the newly clicked ones.
+      const attemptPrice = attempt!.plan === plan ? price : await currentPrice(attempt!.plan, listedPrices);
+      const attemptDiscount = (attempt!.code ?? null) === code ? discount : null;
+      const coupon = attemptDiscount ? await couponFor(attemptDiscount, currency) : null;
+      const startNow = {
+        supabase_uid: user.id,
+        immediate_start_requested: immediateStart ? "true" : "false",
+        immediate_start_requested_at: immediateStart ? new Date().toISOString() : "",
+      };
+      const common = {
+        customer: customerId, client_reference_id: user.id,
+        line_items: [{ price: attemptPrice.id, quantity: 1 }],
         // Collect a billing address and keep it on the bound Stripe Customer
         // for later subscription invoices. Only new snapshots get this policy;
         // ambiguous retries must keep their original idempotency parameters.
-        billing_address_collection: "required",
-        customer_update: { address: "auto" },
+        billing_address_collection: "required" as const,
+        customer_update: { address: "auto" as const },
         success_url: `${ACCOUNT_PAGE_URL}?checkout=success`, cancel_url: `${ACCOUNT_PAGE_URL}?checkout=cancelled`,
-        metadata: { jyson_plan: attempt!.plan, supabase_uid: user.id, checkout_attempt: attempt!.id },
-        // The buyer's start-now request travels with the subscription (EU withdrawal refunds).
-        subscription_data: {
-          metadata: {
-            supabase_uid: user.id,
-            immediate_start_requested: immediateStart ? "true" : "false",
-            immediate_start_requested_at: immediateStart ? new Date().toISOString() : "",
-          },
+        metadata: {
+          jyson_plan: attempt!.plan, supabase_uid: user.id, checkout_attempt: attempt!.id,
+          ...(coupon && attemptDiscount ? { jyson_code: attemptDiscount.code } : {}),
         },
+        ...(coupon ? { discounts: [{ coupon }] } : {}),
         integration_identifier: `jyson-checkout-${Array.from(crypto.getRandomValues(new Uint8Array(8)), (n) => String.fromCharCode(97 + n % 26)).join("")}`,
         // Existing production workaround: Managed Payments requires tax codes.
         managed_payments: { enabled: false },
       };
+      const sessionParams: Stripe.Checkout.SessionCreateParams = original.mode === "subscription"
+        // The buyer's start-now request travels with the subscription (EU withdrawal refunds).
+        ? { ...common, mode: "subscription", subscription_data: { metadata: startNow } }
+        // Lifetime: one payment, with an invoice as the receipt; the request travels with the payment.
+        : { ...common, mode: "payment", payment_intent_data: { metadata: { ...startNow, jyson_plan: "lifetime" } },
+            invoice_creation: { enabled: true, invoice_data: { metadata: { supabase_uid: user.id, jyson_plan: "lifetime" } } } };
       await save({ ...attempt!, sessionParams });
     }
     if (attempt!.sessionParams!.customer !== customerId) throw new Error("Checkout customer changed");
@@ -368,13 +430,14 @@ Deno.serve(async (req: Request) => {
     const createdSession = await stripe.checkout.sessions.create(attempt!.sessionParams!, {
       idempotencyKey: `jyson-checkout-${attempt!.id}`,
     });
-    assertOwner(createdSession, customerId!, user.id);
+    const attemptMode = PLANS[attempt!.plan].mode;
+    assertOwner(createdSession, customerId!, user.id, attemptMode);
     await save({ ...attempt!, sessionId: createdSession.id });
     const session = await stripe.checkout.sessions.retrieve(createdSession.id);
-    assertOwner(session, customerId!, user.id);
+    assertOwner(session, customerId!, user.id, attemptMode);
     // A recovered create may return a historical complete/expired snapshot.
     // Retrieve on the next request rather than return an obsolete cached URL.
-    if (attempt!.plan !== plan || session.status !== "open" || !session.url) {
+    if (attempt!.plan !== plan || (attempt!.code ?? null) !== code || session.status !== "open" || !session.url) {
       throw new CheckoutError("Earlier checkout recovered. Retry to continue with the selected plan.");
     }
     return jsonResponse({ url: session.url });
