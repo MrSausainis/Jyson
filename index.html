@@ -30,6 +30,7 @@
       <a href="#tour">Tour</a>
       <a href="#features">Features</a>
       <a href="#privacy">Privacy</a>
+      <a href="#pricing">Plans</a>
       <a href="#before-download">Before you install</a>
     </nav>
     <div class="header-actions">
@@ -134,6 +135,37 @@
     </div>
   </section>
 
+  <section class="section" id="pricing">
+    <div class="shell">
+      <div class="section-head">
+        <div class="section-kicker">Plans</div>
+        <h2>Pay only if it earns its place.</h2>
+        <p id="pricingNote">Paid plans start soon. Until then every feature is free - see the membership below.</p>
+      </div>
+      <div class="plans">
+        <article class="plan">
+          <h3>Monthly</h3>
+          <div class="plan-price"><span data-price="monthly">2.49</span> <span data-currency>EUR</span><small>/ month</small></div>
+          <p>Every feature. Stop any time on your account page.</p>
+        </article>
+        <article class="plan">
+          <h3>Yearly</h3>
+          <div class="plan-price"><span data-price="annual">19.99</span> <span data-currency>EUR</span><small>/ year</small></div>
+          <p>Every feature for a year - about a third off the monthly price.</p>
+        </article>
+        <article class="plan plan-offer" id="lifetimePlan">
+          <div class="plan-badge">Launch offer</div>
+          <h3>Lifetime</h3>
+          <div class="plan-price"><span data-price="lifetime">16.99</span> <span data-currency>EUR</span><small>once</small></div>
+          <p id="lifetimeTerms">For the first 100 people, until 31 December.</p>
+          <div class="plan-meter" aria-hidden="true"><span id="lifetimeBar"></span></div>
+          <p class="plan-left" id="lifetimeLeft"></p>
+        </article>
+      </div>
+      <p class="plans-trial" id="trialLine"></p>
+    </div>
+  </section>
+
   <section class="section" id="before-download">
     <div class="shell">
       <div class="section-head">
@@ -154,7 +186,7 @@
           <h3>Accounts</h3>
           <div class="fact-list">
             <div class="fact"><div><strong>No account needed to try it.</strong> An account adds the release membership and synced appearance settings.</div></div>
-            <div class="fact"><div><strong>Free release membership.</strong> Every account made before 30 November 2027 gets all features free until that day. No card, nothing to pay, and it ends by itself.</div></div>
+            <div class="fact"><div id="membershipFact"><strong>Free release membership.</strong> Every account made before 30 November 2027 gets all features free until that day. No card, nothing to pay, and it ends by itself.</div></div>
             <div class="fact"><div><strong>The installer is not code-signed yet.</strong> Windows SmartScreen may warn the first time. Updates are checked with a signature before they install.</div></div>
           </div>
           <div class="notice">Download only from the official GitHub release linked on this page. See <a href="security.html#downloads">download security</a>.</div>
@@ -172,6 +204,20 @@
       </div>
       <div class="review-strip" id="reviewsGrid">
         <p class="reviews-empty">Loading reviews…</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="community">
+    <div class="shell">
+      <div class="section-head">
+        <div class="section-kicker">Community</div>
+        <h2>Talk to the people who use it.</h2>
+        <p>Questions, ideas and bug reports go to Jyson's Discord server. The window below is Discord's own and loads only when you ask for it.</p>
+      </div>
+      <div class="discord-box" id="discordBox">
+        <button class="btn btn-primary" type="button" id="discordLoad">Show the Discord server</button>
+        <p class="discord-note">Loads discord.com: Discord's own terms and cookies apply.</p>
       </div>
     </div>
   </section>

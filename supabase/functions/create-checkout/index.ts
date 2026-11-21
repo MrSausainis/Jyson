@@ -20,8 +20,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2.95.0";
 import Stripe from "npm:stripe@22.6.0";
 
-// Owner, 7 Nov 2026: no paid sales until the seller can register (at 18). Every new
-// account gets the free release membership instead. Flip to true at launch.
+// No paid sales until the seller is registered (owner, 7 Nov 2026). Every new account gets the free release
+// membership instead. Flip to true at launch. Lifetime (a one-time payment) is not sold here yet: it needs its own
+// Stripe price, mode "payment", and jyson_private.lifetime_open() asked before the session is made.
 const SALES_OPEN = false;
 
 const ACCOUNT_PAGE_URL = "https://get-jyson.netlify.app/account";

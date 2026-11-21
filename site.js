@@ -42,6 +42,67 @@ fetch(REVIEWS_URL, { headers: { apikey: SUPABASE_ANON_KEY } })
     document.getElementById("reviewsGrid").innerHTML = '<p class="reviews-empty">Reviews are unavailable right now.</p>';
   });
 
+// ---- plans and the membership, from the owner's admin panel (app_config 'prices' is public; public.offer_status gives
+// only counts). If they can't be read the page keeps the numbers written in it.
+const SUPABASE = "https://upiadmvxzphegivqszvp.supabase.co";
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const longDate = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || "")); return m ? `${Number(m[3])} ${MONTHS[Number(m[2]) - 1]} ${m[1]}` : ""; };
+const money = (v) => (typeof v === "number" && v > 0) ? (Number.isInteger(v) ? String(v) : v.toFixed(2)) : null;
+Promise.all([
+  fetch(`${SUPABASE}/rest/v1/app_config?select=value&key=eq.prices`, { headers: { apikey: SUPABASE_ANON_KEY } }).then((r) => r.ok ? r.json() : []),
+  fetch(`${SUPABASE}/rest/v1/rpc/offer_status`, { method: "POST", headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" }, body: "{}" })
+    .then((r) => r.ok ? r.json() : {}).catch(() => ({})),
+]).then(([rows, offer]) => {
+  const p = (rows && rows[0] && rows[0].value) || null;
+  if (!p) return;
+  document.querySelectorAll("[data-currency]").forEach((e) => { e.textContent = String(p.currency || "EUR").slice(0, 3); });
+  document.querySelectorAll("[data-price]").forEach((e) => {
+    const v = money(p[e.dataset.price]);
+    if (v) e.textContent = v; else e.closest(".plan")?.remove();
+  });
+  const life = (offer && offer.lifetime) || {};
+  const terms = [];
+  if (p.lifetime_limit > 0) terms.push(`the first ${p.lifetime_limit} people`);
+  if (p.lifetime_until) terms.push(`until ${longDate(p.lifetime_until)}`);
+  const plan = document.getElementById("lifetimePlan");
+  if (plan) {
+    document.getElementById("lifetimeTerms").textContent = terms.length ? `For ${terms.join(", ")}.` : "Pay once, keep it.";
+    if (typeof life.left === "number" && life.limit > 0) {
+      document.getElementById("lifetimeBar").style.width = `${Math.min(100, 100 * life.taken / life.limit)}%`;
+      document.getElementById("lifetimeLeft").textContent = life.open ? `${life.left} of ${life.limit} left` : "This offer has ended.";
+    } else if (life.open === false) {
+      document.getElementById("lifetimeLeft").textContent = "This offer has ended.";
+    }
+    plan.classList.toggle("plan-soldout", life.open === false);
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const release = p.release_until && p.release_until >= today ? p.release_until : "";
+  const trial = p.early_access ? p.trial_days_early_access : p.trial_days;
+  const fact = document.getElementById("membershipFact");
+  if (release) {
+    if (fact) fact.innerHTML = `<strong>Free release membership.</strong> Every account made before ${longDate(release)} gets all features free until that day. No card, nothing to pay, and it ends by itself.`;
+    document.getElementById("trialLine").textContent = "";
+  } else if (trial > 0) {
+    const line = `${trial}-day free trial for every new account${p.early_access ? " - an Early Access launch offer" : ""}. No card needed.`;
+    if (fact) fact.innerHTML = `<strong>Free trial.</strong> ${line}`;
+    document.getElementById("trialLine").textContent = line;
+  }
+  document.getElementById("pricingNote").textContent = p.checkout_open
+    ? "Every plan has every feature. Pay on your account page; cancel any time."
+    : (release ? "Paid plans start soon. Until then every feature is free - see the membership below." : "Paid plans start soon.");
+}).catch(() => { /* the written numbers stay */ });
+
+// The Discord server window, only after a click (it is Discord's page and sets Discord's cookies).
+document.getElementById("discordLoad")?.addEventListener("click", () => {
+  const frame = document.createElement("iframe");
+  frame.src = "https://discord.com/widget?id=1569725304253972499&theme=dark";
+  frame.title = "Jyson's Discord server";
+  frame.setAttribute("sandbox", "allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts");
+  frame.setAttribute("loading", "lazy");
+  const box = document.getElementById("discordBox");
+  box.replaceChildren(frame);
+});
+
 // On a phone the download is a Windows installer it cannot run: the button sends this page on instead
 // (the share sheet: e-mail, a chat, or "send to PC"), or copies the link where there is no share sheet.
 document.querySelectorAll("[data-send-to-pc]").forEach((button) => button.addEventListener("click", async () => {
