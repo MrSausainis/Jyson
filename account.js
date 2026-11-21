@@ -1007,6 +1007,26 @@ async function deleteOwnReview(){
 }
 el("exportDataBtn").onclick=exportAccountData;
 el("deleteReviewBtn").onclick=deleteOwnReview;
+// The whole account, for good (supabase function delete-account, 14 Nov 2026): asked twice, the server cancels a running
+// subscription first and deletes nothing if that fails.
+async function deleteOwnAccount(){
+  hideMsg("dataMsg");
+  if (!window.confirm("Delete your Jyson account for good? Your profile, plan, review and sign-in go, and a running subscription is cancelled. This can't be undone.")) return;
+  const typed = window.prompt('Type DELETE MY ACCOUNT to delete it for good:') || "";
+  if (typed.trim().toUpperCase() !== "DELETE MY ACCOUNT") { showMsg("dataMsg","Account not deleted.","ok"); return; }
+  setBusy(el("deleteAccountBtn"),true,"Deleting...");
+  const { error } = await supa.functions.invoke("delete-account", { body: { confirm: "DELETE MY ACCOUNT" } });
+  setBusy(el("deleteAccountBtn"),false,"Delete my account");
+  if (error) {
+    let message = "Could not delete the account right now - nothing was deleted. Try again later.";
+    try { message = (await error.context.json()).error || message; } catch {}
+    showMsg("dataMsg", message, "error");
+    return;
+  }
+  await supa.auth.signOut({ scope: "local" });
+  showWrap("auth");
+}
+el("deleteAccountBtn").onclick=deleteOwnAccount;
 
 refreshSession();
 
