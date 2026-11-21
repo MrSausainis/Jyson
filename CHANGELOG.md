@@ -22,7 +22,7 @@ retired, and anyone still on one installs 1.0 by hand once (it cannot update its
 - **Windows Tweaks** (Settings > Taskbar, each one off or on): the wheel over the bar turns the volume,
   middle-click closes an app, Win + D only on the monitor you are on.
 
-#### Dynamic Island
+#### Jyson Mochi (the Dynamic Island)
 - **A compact island at the top** for listening, timers, music and what Jyson is doing; long titles run round in a
   loop instead of stretching it.
 - **Layers:** rest on it for a music player (cover, progress, previous / play / next), scroll for a small menu.
