@@ -120,9 +120,9 @@ Promise.all([
   }
   const note = document.getElementById("pricingNote");
   if (note) note.textContent = show && p.checkout_open ? "Every plan has every feature. Pay on your account page; cancel any time."
-    : show ? "These are the prices at launch. Paid plans are not on sale yet."
-    : trialOpen ? "Paid plans open soon. Until then Jyson works on Free, and every account can take a free trial of every feature."
-    : "Paid plans open soon. Until then Jyson works on Free.";
+    : show ? "These are the planned prices. Paid plans aren't on sale yet while we finish the paperwork - until then the free trial gives you every paid feature."
+    : trialOpen ? "Paid plans aren't on sale yet - we're finishing the paperwork to sell them. Until prices are announced, the free trial gives you everything the paid version has: every feature, no card, and it ends by itself."
+    : "Paid plans aren't on sale yet - we're finishing the paperwork to sell them. Until then Jyson works on Free.";
 }).catch(() => { /* the written texts stay */ });
 
 // The Discord server window, only after a click (it is Discord's page and sets Discord's cookies).

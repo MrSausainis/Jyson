@@ -792,7 +792,7 @@ async function refreshSession(){
     : source === "trial" && Number.isFinite(expiresAt) && expiresAt > Date.now()
       ? (effectiveEntitlement.tier_id === "release" ? "Free for everyone during the release, until " : "Your free trial runs until ")
         + `${longDay(expiresAt)}. No card, nothing to pay, and it ends by itself.`
-    : !SALES_OPEN && !paid ? "Paid plans are not on sale yet." : "";
+    : !SALES_OPEN && !paid ? "Paid plans aren't on sale yet while we finish the paperwork. Until prices are announced, the free trial gives you every paid feature." : "";
   el("planManual").textContent = planNote;
   el("planManual").classList.toggle("hidden", !planNote);
   if (paid) loadSubscription();
