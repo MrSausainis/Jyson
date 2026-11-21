@@ -15,7 +15,7 @@ const publicFiles = [
   "terms-2026-11-14.1.html", "privacy-2026-11-14.1.html",
   "terms-2026-11-20.1.html", "privacy-2026-11-20.1.html",
   "security.html", "accessibility.html",
-  "site.css", "site.js", "account.js", "favicon.svg", "logo.svg",
+  "site.css", "site.js", "live.css", "live.js", "account.js", "favicon.svg", "logo.svg",
   "vendor/supabase-2.117.2.min.js",
   "img/app-chat.png", "img/app-activity.png", "img/app-activity-phone.webp", "img/app-files.png", "img/app-notes.png",
   "robots.txt", "sitemap.xml", "extensions_manifest.json",
