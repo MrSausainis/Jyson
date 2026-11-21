@@ -127,6 +127,22 @@ test("webhook: other one-time payments (the Support page) and a wrong lifetime p
 });
 
 // ---- create-checkout (with SALES_OPEN flipped on in the copy under test only)
+test("checkout: no new payment starts while the database does not answer (the circuit breaker)", async () => {
+  const db = fakeDb();
+  db.from = () => { const q = { select: () => q, eq: () => q, maybeSingle: () => new Promise(() => {}) }; return q; };   // never answers
+  const realTimeout = globalThis.setTimeout;
+  globalThis.setTimeout = (fn) => realTimeout(fn, 1);                       // the 4 s wait, made short
+  try {
+    const handler = await load("create-checkout", { salesOpen: true, db, stripe: {} });
+    const reply = await handler(new Request("https://x/create-checkout", { method: "POST", body: JSON.stringify({ plan: "monthly" }),
+      headers: { Authorization: "Bearer t", "Content-Type": "application/json" } }));
+    assert.equal(reply.status, 503);
+    assert.match((await reply.json()).error, /Nothing was charged/);
+  } finally {
+    globalThis.setTimeout = realTimeout;
+  }
+});
+
 const CONFIG = { currency: "EUR", monthly: 2.49, annual: 19.99, lifetime: 16.99 };
 function checkoutStripe({ prices, coupons = {}, sessions = [] } = {}) {
   const made = { sessions: [], coupons: [] };

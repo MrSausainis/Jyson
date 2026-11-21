@@ -191,6 +191,17 @@ function resolveRequestedPlan(body: Record<string, unknown>): PlanId | null {
   return requestedPlan;
 }
 
+async function databaseAnswers(timeoutMs = 4000): Promise<boolean> {
+  try {
+    const probe = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
+    const answer = probe.from("app_config").select("key").eq("key", "prices").maybeSingle().then(({ error }) => !error);
+    const late = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), timeoutMs));
+    return await Promise.race([answer, late]);
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -201,6 +212,11 @@ Deno.serve(async (req: Request) => {
   }
   if (!SALES_OPEN) {
     return jsonResponse({ error: "Paid plans are not on sale yet. Use Free or the free trial on your account page meanwhile." }, 403);
+  }
+  // Circuit breaker (master plan, section 8): when the database doesn't answer within 4 s, no new payment starts - a
+  // checkout opened now could not be recorded or reconciled. Nothing is charged; the buyer is told to try again soon.
+  if (!(await databaseAnswers())) {
+    return jsonResponse({ error: "Payments are paused for a moment while our servers recover. Nothing was charged - try again in a few minutes." }, 503);
   }
 
   let admin: ReturnType<typeof createClient> | undefined;
