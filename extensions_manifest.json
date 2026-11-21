@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "sequence": 1,
+  "sequence": 2,
   "extensions": [
     {
       "id": "obs_streamer_tools",
@@ -11,7 +11,7 @@
       "publisher": "jyson",
       "homepage": "https://github.com/MrSausainis/Jyson/blob/main/EXTENSIONS.md",
       "api_version": 2,
-      "min_jyson_version": "2.4.0",
+      "min_jyson_version": "1.0.0",
       "tier_flag": "streamer_tools_enabled",
       "permissions": {
         "hosts": [
