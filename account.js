@@ -406,7 +406,7 @@ el("downloadBtn").onclick = () => { window.location.href = DOWNLOAD_URL; };
 
 async function startCheckout(tierKey) {
   hideMsg("upgradeMsg");
-  if (tierKey !== "monthly" && tierKey !== "annual") {
+  if (tierKey !== "monthly" && tierKey !== "annual" && tierKey !== "lifetime") {
     showMsg("upgradeMsg", "Unknown plan.", "error");
     return;
   }
@@ -437,6 +437,28 @@ async function startCheckout(tierKey) {
 }
 el("upgradeMonthlyBtn").onclick = () => startCheckout("monthly");
 el("upgradeAnnualBtn").onclick = () => startCheckout("annual");
+el("upgradeLifetimeBtn").onclick = () => startCheckout("lifetime");
+
+// The plans' prices from the admin panel, and the lifetime card only while its launch offer is open (places left).
+async function loadOffer() {
+  const [{ data: config }, { data: offer }] = await Promise.all([
+    supa.from("app_config").select("value").eq("key", "prices").maybeSingle(),
+    supa.rpc("offer_status"),
+  ]);
+  const prices = config?.value || {};
+  document.querySelectorAll("[data-plan-price]").forEach((node) => {
+    const value = Number(prices[node.dataset.planPrice]);
+    if (Number.isFinite(value) && value > 0) node.textContent = value.toFixed(2);
+  });
+  const life = offer?.lifetime || {};
+  el("lifetimeCard").classList.toggle("hidden", life.open !== true);
+  if (life.open === true) {
+    const parts = [];
+    if (typeof life.left === "number") parts.push(`${life.left} of ${life.limit} places left`);
+    if (life.until) parts.push(`until ${new Date(life.until + "T12:00:00").toLocaleDateString(undefined, { day: "numeric", month: "long" })}`);
+    el("lifetimeOffer").textContent = "Pay once, keep every feature. Launch offer" + (parts.length ? ": " + parts.join(", ") : "") + ".";
+  }
+}
 
 async function openBillingPortal() {
   hideMsg("billingMsg");
@@ -480,6 +502,15 @@ const day = (iso) => new Date(iso).toLocaleDateString(undefined, { day: "numeric
 
 function renderSubscription(s) {
   subscriptionState = s;
+  el("renewalBtn").classList.toggle("hidden", Boolean(s.lifetime));
+  if (s.lifetime) {
+    el("dashExpires").textContent = "Paid once - yours for good.";
+    el("withdrawBtn").classList.toggle("hidden", !s.can_withdraw);
+    el("planManageNote").textContent = s.can_withdraw
+      ? `You can withdraw until ${day(s.withdraw_until)}. You would get back the whole payment (${money(s.refund_cents, s.currency)}) and lifetime ends at once.`
+      : s.withdraw_needs_support ? "To withdraw, email Jysonsupport@gmail.com." : "Lifetime has nothing to renew or cancel.";
+    return;
+  }
   el("renewalBtn").textContent = s.cancel_at_period_end ? "Turn renewal back on" : "Stop renewal";
   el("dashExpires").textContent = s.cancel_at_period_end
     ? `Ends on ${day(s.current_period_end)}. It will not renew.`
@@ -729,7 +760,7 @@ async function refreshSession(){
   const displayTier = effectiveEntitlement.tiers?.display_name || effectiveEntitlement.tier_id;
   const source = effectiveEntitlement.tier_source;
   const sourceLabel = source === "manual" ? "Given by the Jyson team" :
-                      source === "stripe" ? "Paid plan" :
+                      source === "stripe" ? (effectiveEntitlement.tier_id === "lifetime" ? "Paid once - lifetime" : "Paid plan") :
                       source === "trial" ? (effectiveEntitlement.tier_id === "release" ? "Free release membership" : "Free trial") :
                       source === "expired" ? "Plan ended" : "Free";
   const allowedThemes = [...new Set((effectiveEntitlement.tiers?.allowed_themes || [DEFAULT_THEME]).map(themeName))]
@@ -766,6 +797,7 @@ async function refreshSession(){
   el("planManual").classList.toggle("hidden", !planNote);
   if (paid) loadSubscription();
   loadTrial();
+  if (SALES_OPEN && !paid) loadOffer().catch(() => {});
   if (window.location.hash === "#plan") openDashboardSection("plan");
 
   const checkoutState = params.get("checkout");

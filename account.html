@@ -182,10 +182,11 @@
         <div class="summary-note" id="dashSource" hidden>—</div>
 
         <div id="planChoose" class="hidden">
-          <label class="check-row" for="startNow"><input type="checkbox" id="startNow" /><span>Start my plan right away. I understand that if I withdraw in the first 14 days, I get back the part I didn't use.</span></label>
+          <label class="check-row" for="startNow"><input type="checkbox" id="startNow" /><span>Start my plan right away. If I withdraw within 14 days, a subscription gives back the part I didn't use, and lifetime gives back the whole payment.</span></label>
           <div class="plan-cards">
-            <div class="plan-card"><h3>Monthly</h3><div class="plan-price">€2.49 <small>/ month</small></div><p>Renews every month. Stop any time.</p><button class="btn btn-primary block" id="upgradeMonthlyBtn">Choose monthly</button></div>
-            <div class="plan-card"><h3>Annual</h3><div class="plan-price">€19.99 <small>/ year</small></div><p>About a third off the monthly price.</p><button class="btn btn-secondary block" id="upgradeAnnualBtn">Choose annual</button></div>
+            <div class="plan-card"><h3>Monthly</h3><div class="plan-price">€<span data-plan-price="monthly">2.49</span> <small>/ month</small></div><p>Renews every month. Stop any time.</p><button class="btn btn-primary block" id="upgradeMonthlyBtn">Choose monthly</button></div>
+            <div class="plan-card"><h3>Annual</h3><div class="plan-price">€<span data-plan-price="annual">19.99</span> <small>/ year</small></div><p>About a third off the monthly price.</p><button class="btn btn-secondary block" id="upgradeAnnualBtn">Choose annual</button></div>
+            <div class="plan-card hidden" id="lifetimeCard"><h3>Lifetime</h3><div class="plan-price">€<span data-plan-price="lifetime">16.99</span> <small>once</small></div><p id="lifetimeOffer">Pay once, keep every feature. Launch offer.</p><button class="btn btn-secondary block" id="upgradeLifetimeBtn">Choose lifetime</button></div>
           </div>
           <p class="panel-lede" style="margin-top:12px;">Payment is handled by Stripe. Card details never reach this website.</p>
         </div>

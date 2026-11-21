@@ -15,6 +15,11 @@
 //   days for free. A customer with 2+ withdrawals in the last 365 days is sent
 //   to support instead of the automatic path (the right itself stays).
 // Identity, customer, amounts and dates are all server-side; the body only names the action.
+//
+// 14 Nov 2026 (owner): prices are known by their lookup key (jyson_monthly / jyson_annual) as well as the two legacy
+// ids. Lifetime (a one-time payment) has the same button: within 14 days of buying, the whole payment comes back and
+// lifetime ends (public.revoke_stripe_lifetime); after that it is the buyer's for good. A second lifetime withdrawal
+// within a year goes through support, like repeated subscription withdrawals.
 
 import { createClient } from "npm:@supabase/supabase-js@2.95.0";
 import Stripe from "npm:stripe@22.6.0";
@@ -26,6 +31,7 @@ const PRICE_TIERS: Record<string, string> = {
   price_1UCPzSJ78TGxjoZzD8Pc4ppZ: "monthly",
   price_1UD87kJ78TGxjoZzyIHNEkQG: "annual",
 };
+const LOOKUP_TIERS: Record<string, string> = { jyson_monthly: "monthly", jyson_annual: "annual" };
 const headers = {
   "Access-Control-Allow-Origin": ORIGIN,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -44,7 +50,8 @@ const json = (body: Record<string, unknown>, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...headers, "Content-Type": "application/json" } });
 
 const customerOf = (value: string | { id: string } | null) => typeof value === "string" ? value : value?.id ?? null;
-const planItem = (sub: Stripe.Subscription) => sub.items.data.find((item) => Object.hasOwn(PRICE_TIERS, item.price.id));
+const tierOf = (price: Stripe.Price) => LOOKUP_TIERS[price.lookup_key ?? ""] ?? PRICE_TIERS[price.id] ?? null;
+const planItem = (sub: Stripe.Subscription) => sub.items.data.find((item) => tierOf(item.price) !== null);
 
 // The paid part of the subscription's first invoice: amount, currency and the payment intent to refund.
 async function firstPayment(sub: Stripe.Subscription) {
@@ -87,7 +94,7 @@ async function view(sub: Stripe.Subscription, customerId: string) {
   const item = planItem(sub);
   const w = await withdrawal(sub, customerId);
   return {
-    plan: item ? PRICE_TIERS[item.price.id] : null,
+    plan: item ? tierOf(item.price) : null,
     status: sub.status,
     cancel_at_period_end: Boolean(sub.cancel_at_period_end || sub.cancel_at),
     current_period_end: item ? new Date(item.current_period_end * 1000).toISOString() : null,
@@ -96,6 +103,38 @@ async function view(sub: Stripe.Subscription, customerId: string) {
     withdraw_needs_support: Boolean((w as { support?: boolean }).support),
     refund_cents: w.refund,
     currency: w.currency,
+  };
+}
+
+// ---- lifetime: the newest paid lifetime checkout of this customer, and what withdrawing it now would give back
+async function lifetimePurchase(customerId: string, userId: string) {
+  const sessions = await stripe.checkout.sessions.list({ customer: customerId, limit: 100, expand: ["data.payment_intent"] });
+  const paid = sessions.data.filter((s) => s.mode === "payment" && s.status === "complete" &&
+    s.metadata?.jyson_plan === "lifetime" && s.client_reference_id === userId &&
+    (s.payment_status === "paid" || s.payment_status === "no_payment_required"));
+  paid.sort((a, b) => b.created - a.created);
+  return { purchase: paid[0] ?? null, earlier: paid.slice(1) };
+}
+
+function lifetimeWithdrawal(purchase: Stripe.Checkout.Session, earlier: Stripe.Checkout.Session[]) {
+  const now = Date.now();
+  const until = purchase.created * 1000 + WITHDRAW_DAYS * 86400000;
+  const intent = customerOf(purchase.payment_intent as string | { id: string } | null);
+  const currency = purchase.currency ?? "eur";
+  if (now > until) return { open: false, until, refund: 0, currency, intent: null as string | null };
+  const withdrawnBefore = earlier.filter((s) => {
+    const pi = s.payment_intent as Stripe.PaymentIntent | string | null;
+    return pi && typeof pi !== "string" && Number(pi.metadata?.jyson_withdrawn_at || 0) > now - 365 * 86400000;
+  }).length;
+  if (withdrawnBefore >= 1) return { open: false, until, refund: 0, currency, intent: null, support: true };
+  return { open: true, until, refund: purchase.amount_total ?? 0, currency, intent };
+}
+
+function lifetimeView(w: ReturnType<typeof lifetimeWithdrawal>) {
+  return {
+    plan: "lifetime", lifetime: true, status: "paid", cancel_at_period_end: false, current_period_end: null,
+    can_withdraw: w.open, withdraw_until: new Date(w.until).toISOString(),
+    withdraw_needs_support: Boolean((w as { support?: boolean }).support), refund_cents: w.refund, currency: w.currency,
   };
 }
 
@@ -122,8 +161,37 @@ Deno.serve(async (req: Request) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
     const { data: row, error } = await admin.from("entitlements")
-      .select("id,stripe_customer_id,stripe_subscription_id").eq("id", user.id).maybeSingle();
+      .select("id,stripe_customer_id,stripe_subscription_id,tier_id,tier_source").eq("id", user.id).maybeSingle();
     if (error) return json({ error: "Billing details are temporarily unavailable." }, 503);
+    if (row?.tier_id === "lifetime" && row.tier_source === "stripe" && row.stripe_customer_id) {
+      if (action === "stop_renewal" || action === "resume") throw new UserError("Lifetime has nothing to renew.");
+      const { purchase, earlier } = await lifetimePurchase(row.stripe_customer_id, user.id);
+      if (!purchase) throw new UserError("The lifetime payment could not be found. Email support.");
+      const w = lifetimeWithdrawal(purchase, earlier);
+      if (action === "withdraw") {
+        if ((w as { support?: boolean }).support) {
+          throw new UserError("Please email Jysonsupport@gmail.com to withdraw; we handle repeated withdrawals by hand.");
+        }
+        if (!w.open) throw new UserError("The 14 days to withdraw have passed. Lifetime is yours for good.");
+        let refunded = 0;
+        if (w.refund > 0) {
+          if (!w.intent) throw new UserError("The payment could not be found. Email support.");
+          // Refund first; a retry after a lost response finds this refund and only finishes the rest.
+          const existing = (await stripe.refunds.list({ payment_intent: w.intent, limit: 20 })).data
+            .find((r) => r.metadata?.jyson_withdraw === purchase.id && r.status !== "failed" && r.status !== "canceled");
+          const refund = existing ?? await stripe.refunds.create({
+            payment_intent: w.intent, amount: w.refund, reason: "requested_by_customer",
+            metadata: { jyson_withdraw: purchase.id, supabase_uid: user.id },
+          }, { idempotencyKey: `jyson-withdraw-${purchase.id}` });
+          refunded = refund.amount;
+          await stripe.paymentIntents.update(w.intent, { metadata: { jyson_withdrawn_at: String(Date.now()) } });
+        }
+        const { error: revokeError } = await admin.rpc("revoke_stripe_lifetime", { p_user_id: user.id });
+        if (revokeError) throw new Error("Lifetime revoke failed");
+        return json({ withdrawn: true, refund_cents: refunded, currency: w.currency });
+      }
+      return json(lifetimeView(w));
+    }
     if (!row?.stripe_customer_id || !row.stripe_subscription_id) throw new UserError("There is no paid plan on this account.");
     const customerId = row.stripe_customer_id;
     let sub = await stripe.subscriptions.retrieve(row.stripe_subscription_id);

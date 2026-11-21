@@ -209,3 +209,74 @@ test("checkout: no price with the lookup key, an unknown plan, or lifetime alrea
     db: checkoutDb({ entitlement: { stripe_customer_id: "cus_1", tier_id: "lifetime", tier_source: "stripe" } }) });
   assert.equal((await handler(buy({ plan: "monthly" }))).status, 409);
 });
+
+// ---- manage-subscription: lifetime gets the same 14-day withdrawal (the whole payment back), subscriptions on the new
+// lookup-key prices are recognised
+function manageStripe({ sessions = [], subscription = null, refunds = [] } = {}) {
+  const made = { refunds: [], intents: [] };
+  return {
+    made,
+    checkout: { sessions: { list: async () => ({ data: sessions, has_more: false }) } },
+    refunds: {
+      list: async () => ({ data: refunds }),
+      create: async (params, opts) => { made.refunds.push([params, opts]); return { id: "re_1", amount: params.amount }; },
+    },
+    paymentIntents: { update: async (id, params) => { made.intents.push([id, params]); return { id }; } },
+    subscriptions: { retrieve: async () => subscription, list: async () => ({ data: [], has_more: false }) },
+    invoices: { list: async () => ({ data: [{ id: "in_1", billing_reason: "subscription_create", amount_paid: 249, currency: "eur" }] }) },
+    invoicePayments: { list: async () => ({ data: [{ payment: { type: "payment_intent", payment_intent: "pi_s" } }] }) },
+  };
+}
+const ask = (action) => new Request("https://x/", { method: "POST", headers: { Authorization: "Bearer u", "content-type": "application/json" }, body: JSON.stringify({ action }) });
+const lifetimeSession = (daysAgo, extra = {}) => ({ id: `cs_${daysAgo}`, mode: "payment", status: "complete", payment_status: "paid",
+  metadata: { jyson_plan: "lifetime" }, client_reference_id: "user-1", created: Math.floor(Date.now() / 1000) - daysAgo * 86400,
+  amount_total: 1699, currency: "eur", payment_intent: { id: `pi_${daysAgo}`, metadata: {} }, ...extra });
+const lifetimeRow = { id: "user-1", stripe_customer_id: "cus_1", stripe_subscription_id: null, tier_id: "lifetime", tier_source: "stripe" };
+
+test("manage: lifetime bought 3 days ago can be withdrawn for the whole payment; it refunds, then ends lifetime", async () => {
+  const stripe = manageStripe({ sessions: [lifetimeSession(3)] });
+  const db = fakeDb({ row: lifetimeRow, rpc: { revoke_stripe_lifetime: true } });
+  let handler = await load("manage-subscription", { db, stripe });
+  const status = await (await handler(ask("status"))).json();
+  assert.equal(status.lifetime, true);
+  assert.equal(status.can_withdraw, true);
+  assert.equal(status.refund_cents, 1699);
+  handler = await load("manage-subscription", { db, stripe });
+  const done = await (await handler(ask("withdraw"))).json();
+  assert.deepEqual(done, { withdrawn: true, refund_cents: 1699, currency: "eur" });
+  assert.deepEqual(stripe.made.refunds[0][0], { payment_intent: "pi_3", amount: 1699, reason: "requested_by_customer",
+    metadata: { jyson_withdraw: "cs_3", supabase_uid: "user-1" } });
+  assert.equal(stripe.made.refunds[0][1].idempotencyKey, "jyson-withdraw-cs_3");
+  assert.equal(stripe.made.intents[0][0], "pi_3");
+  assert.deepEqual(db.calls.map(([n]) => n), ["revoke_stripe_lifetime"]);
+});
+
+test("manage: after 14 days lifetime is for good; a second lifetime withdrawal in a year goes to support", async () => {
+  let handler = await load("manage-subscription", { db: fakeDb({ row: lifetimeRow }), stripe: manageStripe({ sessions: [lifetimeSession(20)] }) });
+  assert.equal((await (await handler(ask("status"))).json()).can_withdraw, false);
+  handler = await load("manage-subscription", { db: fakeDb({ row: lifetimeRow }), stripe: manageStripe({ sessions: [lifetimeSession(20)] }) });
+  let res = await handler(ask("withdraw"));
+  assert.equal(res.status, 409);
+  assert.match((await res.json()).error, /yours for good/);
+  const before = lifetimeSession(60, { payment_intent: { id: "pi_60", metadata: { jyson_withdrawn_at: String(Date.now() - 50 * 86400000) } } });
+  const stripe = manageStripe({ sessions: [lifetimeSession(2), before] });
+  handler = await load("manage-subscription", { db: fakeDb({ row: lifetimeRow }), stripe });
+  res = await handler(ask("withdraw"));
+  assert.equal(res.status, 409);
+  assert.match((await res.json()).error, /Jysonsupport@gmail\.com/);
+  assert.equal(stripe.made.refunds.length, 0);
+  handler = await load("manage-subscription", { db: fakeDb({ row: lifetimeRow }), stripe: manageStripe({ sessions: [lifetimeSession(2)] }) });
+  assert.equal((await handler(ask("stop_renewal"))).status, 409);
+});
+
+test("manage: a subscription on the new lookup-key price shows its plan and pro-rata withdrawal", async () => {
+  const now = Math.floor(Date.now() / 1000);
+  const subscription = { id: "sub_1", status: "active", customer: "cus_1", start_date: now - 86400, metadata: { immediate_start_requested: "true" },
+    cancel_at_period_end: false, items: { data: [{ price: MONTHLY_PRICE, current_period_start: now - 86400, current_period_end: now + 29 * 86400 }] } };
+  const handler = await load("manage-subscription", { stripe: manageStripe({ subscription }),
+    db: fakeDb({ row: { id: "user-1", stripe_customer_id: "cus_1", stripe_subscription_id: "sub_1", tier_id: "monthly", tier_source: "stripe" } }) });
+  const status = await (await handler(ask("status"))).json();
+  assert.equal(status.plan, "monthly");
+  assert.equal(status.can_withdraw, true);
+  assert.ok(status.refund_cents > 230 && status.refund_cents < 249, String(status.refund_cents));
+});
