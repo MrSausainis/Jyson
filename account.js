@@ -13,9 +13,9 @@ const RESEND_COOLDOWN_SECONDS = 30;
 // a free trial (public.start_trial; one per account every 60 days). Flip with create-checkout's SALES_OPEN at launch.
 const SALES_OPEN = false;
 const LEGAL_RELEASE = {
-  version: "2026-11-14.1",
-  terms_sha256: "14b4f59089b0b3f64e41e328e4078a53c34f77b484c6e57fc702f1c63cce6c89",
-  privacy_sha256: "d067680684e5b3213a5bef97c9c681316cca10c2f55b30c34fb40945dd940e9e",
+  version: "2026-11-20.1",
+  terms_sha256: "df466a600ed5d1d28e278daeb90044c07f65de34fed30f96725c11bc044ec7db",
+  privacy_sha256: "ee67cc93635ed0c7b8c52e93ed23afba0813da5de355d5e1dd91dff15b40d44b",
 };
 
 // The app's themes (jyson_theme.THEMES): background, surface and accent.
