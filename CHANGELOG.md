@@ -11,9 +11,11 @@ retired, and anyone still on one installs 1.0 by hand once (it cannot update its
 ### What's in it
 
 #### Jyson Bar (JB) - a new taskbar
-- **Your apps, the clock and your music in one bar** along the bottom of every monitor, with window previews,
-  pinned apps and the tray. It hides by itself if Windows' taskbar does, and never comes up over a full-screen game.
-- **Make it yours:** Jyson, Midnight, White or Clear, nine accent colours, three sizes, and a layout editor.
+- **Your apps, the clock and your music in one bar** on every monitor, with window previews, pinned apps and the
+  tray - at the bottom, or at the top in two parts with Mochi between them. It hides by itself if Windows' taskbar
+  does, and never comes up over a full-screen game.
+- **Make it yours:** looks (Neon, Frosted, Liquid glass, Deep glass, Clear, Midnight, White and more), nine accent
+  colours, sizes, opacity down to fully see-through, and an editor where you drag widgets onto the bar.
 - **Widgets:** weather, calendar (iCal), CPU, GPU (NVIDIA), RAM, AI requests today, screen time, timer, Pomodoro,
   stopwatch, world clocks, currency, day line, uptime and more, grouped in the editor.
 - **Quick settings** from the Wi-Fi / volume button: Wi-Fi, Bluetooth, Airplane mode, microphone, night light with
@@ -27,6 +29,9 @@ retired, and anyone still on one installs 1.0 by hand once (it cannot update its
   loop instead of stretching it.
 - **Layers:** rest on it for a music player (cover, progress, previous / play / next), scroll for a small menu.
 - A saved clip is confirmed with a card showing its first frame. Optional soft interface sounds.
+
+#### Desktop widgets
+- A big clock with the weekday in thin capitals, today's plan, and a calendar with your own photo. Drag them anywhere.
 
 #### Clips
 - **F8 saves the last seconds of your screen and PC sound** (15-120 s), recorded in memory with your NVIDIA GPU
