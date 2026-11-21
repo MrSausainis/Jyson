@@ -150,6 +150,10 @@ img{max-width:100%}
 .plan-left{font-size:.82rem!important;color:var(--accent-strong)!important}
 .plan-soldout .plan-price,.plan-soldout h3{opacity:.55}
 .plans-trial{color:var(--muted);font-size:.9rem;margin:20px 2px 0}
+.plans[hidden],.plans-hold[hidden]{display:none}
+.plans-hold{display:flex;flex-direction:column;gap:6px;border:1px dashed var(--line);border-radius:16px;padding:22px 26px;background:var(--surface);max-width:640px}
+.plans-hold strong{font-size:1.1rem;font-weight:650}
+.plans-hold span{color:var(--muted);font-size:.92rem}
 .discord-box{border:1px solid var(--line);border-radius:16px;padding:26px;background:var(--surface);display:flex;flex-direction:column;align-items:flex-start;gap:12px;max-width:420px}
 .discord-box iframe{width:100%;max-width:350px;height:500px;border:0;border-radius:12px;background:var(--surface-2)}
 .discord-note{color:var(--faint);font-size:.78rem;margin:0}

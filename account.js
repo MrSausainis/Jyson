@@ -9,12 +9,12 @@ const SUPABASE_URL = "https://upiadmvxzphegivqszvp.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_iS9do7OPQuY-zEeAFfSrWQ_zA_IAObI";
 const DOWNLOAD_URL = "https://github.com/MrSausainis/Jyson/releases/latest/download/Jyson-AI-Setup.exe";
 const RESEND_COOLDOWN_SECONDS = 30;
-// Owner, 7 Nov 2026: no paid sales until the seller can register; new accounts get the free
-// release membership (until 30 Nov 2027). Flip with create-checkout's SALES_OPEN at launch.
+// Owner, 7 Nov 2026: no paid sales until the seller can register. Since 14 Nov a new account starts on Free and can take
+// a free trial (public.start_trial; one per account every 60 days). Flip with create-checkout's SALES_OPEN at launch.
 const SALES_OPEN = false;
 const LEGAL_RELEASE = {
-  version: "2026-11-07.1",
-  terms_sha256: "948f6d1937824280b2d6310751f90a294deb386943b7dcdeb65419126d93dbbb",
+  version: "2026-11-14.1",
+  terms_sha256: "14b4f59089b0b3f64e41e328e4078a53c34f77b484c6e57fc702f1c63cce6c89",
   privacy_sha256: "d067680684e5b3213a5bef97c9c681316cca10c2f55b30c34fb40945dd940e9e",
 };
 
@@ -490,6 +490,29 @@ function renderSubscription(s) {
     : "Stopping renewal keeps your plan until the end of the period you paid for.";
 }
 
+// The free trial on request (owner, 14 Nov): the database says whether this account may start one now.
+function longDay(t) { return new Date(t).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" }); }
+async function loadTrial() {
+  const { data, error } = await supa.rpc("my_trial");
+  const box = el("planTrial");
+  if (error || !data) { box.classList.add("hidden"); return; }
+  const note = data.can_start ? `Every feature for ${data.days} days. No card, and it ends by itself - then you're back on Free.`
+    : !data.on_plan && data.open && data.next_trial ? `You had a free trial recently. The next one is possible from ${longDay(data.next_trial)}.`
+    : "";
+  el("planTrialNote").textContent = note;
+  el("startTrialBtn").classList.toggle("hidden", !data.can_start);
+  box.classList.toggle("hidden", !note);
+}
+el("startTrialBtn").addEventListener("click", async () => {
+  const btn = el("startTrialBtn");
+  setBusy(btn, true, "Starting...");
+  const { data, error } = await supa.rpc("start_trial");
+  setBusy(btn, false, "Start free trial");
+  if (error) { showMsg("upgradeMsg", error.message || "The trial could not be started.", "error"); return; }
+  showMsg("upgradeMsg", `Done - every feature until ${longDay(data.ends)}. In Jyson: Settings > Account > Refresh plan.`, "ok");
+  await refreshSession();
+});
+
 async function loadSubscription() {
   hideMsg("billingMsg");
   try { renderSubscription(await subscriptionCall("status")); }
@@ -707,7 +730,7 @@ async function refreshSession(){
   const source = effectiveEntitlement.tier_source;
   const sourceLabel = source === "manual" ? "Given by the Jyson team" :
                       source === "stripe" ? "Paid plan" :
-                      source === "trial" ? "Free release membership" :
+                      source === "trial" ? (effectiveEntitlement.tier_id === "release" ? "Free release membership" : "Free trial") :
                       source === "expired" ? "Plan ended" : "Free";
   const allowedThemes = [...new Set((effectiveEntitlement.tiers?.allowed_themes || [DEFAULT_THEME]).map(themeName))]
     .filter((name) => THEME_COLORS[name]);
@@ -736,11 +759,13 @@ async function refreshSession(){
   el("planManage").classList.toggle("hidden", !paid);
   const planNote = source === "manual" ? "This plan was given to you by the Jyson team. There is nothing to pay or cancel."
     : source === "trial" && Number.isFinite(expiresAt) && expiresAt > Date.now()
-      ? `Free for everyone during the release, until ${new Date(expiresAt).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}. No card, nothing to pay, and it ends by itself.`
-    : !SALES_OPEN && !paid ? "Paid plans are not on sale yet. New accounts get every feature free during the release." : "";
+      ? (effectiveEntitlement.tier_id === "release" ? "Free for everyone during the release, until " : "Your free trial runs until ")
+        + `${longDay(expiresAt)}. No card, nothing to pay, and it ends by itself.`
+    : !SALES_OPEN && !paid ? "Paid plans are not on sale yet." : "";
   el("planManual").textContent = planNote;
   el("planManual").classList.toggle("hidden", !planNote);
   if (paid) loadSubscription();
+  loadTrial();
   if (window.location.hash === "#plan") openDashboardSection("plan");
 
   const checkoutState = params.get("checkout");

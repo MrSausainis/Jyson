@@ -139,7 +139,7 @@
     <h2 id="legalTitle">One more thing</h2>
     <p class="panel-lede" id="legalLede">Please agree to the current Terms. You only do this once, or again if they change.</p>
     <div id="legalControls">
-      <label class="check-row" for="legalTerms"><input type="checkbox" id="legalTerms" /><span>I agree to the <a href="terms-2026-11-07.1.html" target="_blank" rel="noopener">Terms</a> and have read the <a href="privacy-2026-11-07.1.html" target="_blank" rel="noopener">Privacy Notice</a>.</span></label>
+      <label class="check-row" for="legalTerms"><input type="checkbox" id="legalTerms" /><span>I agree to the <a href="terms-2026-11-14.1.html" target="_blank" rel="noopener">Terms</a> and have read the <a href="privacy-2026-11-14.1.html" target="_blank" rel="noopener">Privacy Notice</a>.</span></label>
       <div class="plan-actions"><button type="button" class="btn btn-primary" id="legalConfirmBtn" disabled>Agree</button><button type="button" class="btn btn-quiet" id="legalRetryBtn">Check again</button></div>
     </div>
     <div class="msg" id="legalMsg" role="status" aria-live="polite"></div>
@@ -184,8 +184,8 @@
         <div id="planChoose" class="hidden">
           <label class="check-row" for="startNow"><input type="checkbox" id="startNow" /><span>Start my plan right away. I understand that if I withdraw in the first 14 days, I get back the part I didn't use.</span></label>
           <div class="plan-cards">
-            <div class="plan-card"><h3>Monthly</h3><div class="plan-price">€2 <small>/ month</small></div><p>Renews every month. Stop any time.</p><button class="btn btn-primary block" id="upgradeMonthlyBtn">Choose monthly</button></div>
-            <div class="plan-card"><h3>Annual</h3><div class="plan-price">€20 <small>/ year</small></div><p>Two months free compared to monthly.</p><button class="btn btn-secondary block" id="upgradeAnnualBtn">Choose annual</button></div>
+            <div class="plan-card"><h3>Monthly</h3><div class="plan-price">€2.49 <small>/ month</small></div><p>Renews every month. Stop any time.</p><button class="btn btn-primary block" id="upgradeMonthlyBtn">Choose monthly</button></div>
+            <div class="plan-card"><h3>Annual</h3><div class="plan-price">€19.99 <small>/ year</small></div><p>About a third off the monthly price.</p><button class="btn btn-secondary block" id="upgradeAnnualBtn">Choose annual</button></div>
           </div>
           <p class="panel-lede" style="margin-top:12px;">Payment is handled by Stripe. Card details never reach this website.</p>
         </div>
@@ -200,6 +200,10 @@
         </div>
 
         <p class="panel-lede hidden" id="planManual" style="margin-top:10px;">This plan was given to you by the Jyson team. There is nothing to pay or cancel.</p>
+        <div class="hidden" id="planTrial" style="margin-top:14px;">
+          <p class="panel-lede" id="planTrialNote"></p>
+          <button class="btn btn-primary" id="startTrialBtn" style="margin-top:10px;">Start free trial</button>
+        </div>
         <div class="msg" id="upgradeMsg"></div>
         <div class="msg" id="billingMsg" role="status" aria-live="polite"></div>
       </div>

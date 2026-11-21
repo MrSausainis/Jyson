@@ -48,6 +48,12 @@ const SUPABASE = "https://upiadmvxzphegivqszvp.supabase.co";
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const longDate = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || "")); return m ? `${Number(m[3])} ${MONTHS[Number(m[2]) - 1]} ${m[1]}` : ""; };
 const money = (v) => (typeof v === "number" && v > 0) ? (Number.isInteger(v) ? String(v) : v.toFixed(2)) : null;
+// Why the plans are hidden (admin panel: Prices and trials > Reason while hidden); "hidden" leaves out the section.
+const HOLD = {
+  launch: ["Plans open soon.", "The prices go up here at launch. Until then: Jyson on Free, or every feature with a free trial."],
+  prices: ["New prices are being set.", "Check back in a few days. Free and the free trial work as usual."],
+  maintenance: ["Payments are under maintenance.", "Nothing can be bought for a little while. Free and the free trial work as usual."],
+};
 Promise.all([
   fetch(`${SUPABASE}/rest/v1/app_config?select=value&key=eq.prices`, { headers: { apikey: SUPABASE_ANON_KEY } }).then((r) => r.ok ? r.json() : []),
   fetch(`${SUPABASE}/rest/v1/rpc/offer_status`, { method: "POST", headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" }, body: "{}" })
@@ -75,22 +81,49 @@ Promise.all([
     }
     plan.classList.toggle("plan-soldout", life.open === false);
   }
+
+  // the plans themselves, or why they are not here yet
+  const show = p.show_plans === true;
+  const hold = HOLD[p.plans_reason] || (p.plans_reason === "hidden" ? null : HOLD.launch);
+  document.getElementById("plansGrid").hidden = !show;
+  document.getElementById("plansHold").hidden = show || !hold;
+  if (!show && hold) {
+    document.getElementById("plansHoldTitle").textContent = hold[0];
+    document.getElementById("plansHoldText").textContent = hold[1];
+  }
+  if (!show && !hold) {
+    document.getElementById("pricing")?.remove();
+    document.querySelector('a[href="#pricing"]')?.remove();
+  }
+
+  // Free, the trial and the release membership, as the admin panel has them now
   const today = new Date().toISOString().slice(0, 10);
   const release = p.release_until && p.release_until >= today ? p.release_until : "";
-  const trial = p.early_access ? p.trial_days_early_access : p.trial_days;
+  const days = Number(p.trial_on_signup && p.early_access ? p.trial_days_early_access : p.trial_days) || 0;
+  const trialOpen = p.trial_open !== false && days > 0;
+  const gap = Number(p.trial_gap_days) || 0;
   const fact = document.getElementById("membershipFact");
+  const line = document.getElementById("trialLine");
   if (release) {
     if (fact) fact.innerHTML = `<strong>Free release membership.</strong> Every account made before ${longDate(release)} gets all features free until that day. No card, nothing to pay, and it ends by itself.`;
-    document.getElementById("trialLine").textContent = "";
-  } else if (trial > 0) {
-    const line = `${trial}-day free trial for every new account${p.early_access ? " - an Early Access launch offer" : ""}. No card needed.`;
-    if (fact) fact.innerHTML = `<strong>Free trial.</strong> ${line}`;
-    document.getElementById("trialLine").textContent = line;
+    if (line) line.textContent = "";
+  } else if (trialOpen && p.trial_on_signup) {
+    if (fact) fact.innerHTML = `<strong>Free trial.</strong> Every new account gets every feature for ${days} days. No card, nothing to pay, and it ends by itself.`;
+    if (line) line.textContent = `${days}-day free trial for every new account. No card needed.`;
+  } else if (trialOpen) {
+    if (fact) fact.innerHTML = `<strong>Free trial.</strong> Every feature for ${days} days, started from your account page when you want. No card, nothing to pay, and it ends by itself.`;
+    if (line) line.textContent = `Start on Free, or take a free ${days}-day trial from your account page - every feature, no card, and it ends by itself.`
+      + (gap ? ` One trial per account every ${gap} days.` : "");
+  } else {
+    if (fact) fact.innerHTML = "<strong>Free to start.</strong> Jyson works on Free, no card needed.";
+    if (line) line.textContent = "";
   }
-  document.getElementById("pricingNote").textContent = p.checkout_open
-    ? "Every plan has every feature. Pay on your account page; cancel any time."
-    : (release ? "Paid plans start soon. Until then every feature is free - see the membership below." : "Paid plans start soon.");
-}).catch(() => { /* the written numbers stay */ });
+  const note = document.getElementById("pricingNote");
+  if (note) note.textContent = show && p.checkout_open ? "Every plan has every feature. Pay on your account page; cancel any time."
+    : show ? "These are the prices at launch. Paid plans are not on sale yet."
+    : trialOpen ? "Paid plans open soon. Until then Jyson works on Free, and every account can take a free trial of every feature."
+    : "Paid plans open soon. Until then Jyson works on Free.";
+}).catch(() => { /* the written texts stay */ });
 
 // The Discord server window, only after a click (it is Discord's page and sets Discord's cookies).
 document.getElementById("discordLoad")?.addEventListener("click", () => {

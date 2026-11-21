@@ -80,7 +80,7 @@ test('actual session renderer keeps billing/data dashboard available while gatin
   context.refreshLegalState=async uid=>{assert.equal(uid,'own');return accepted;};
   context.PAGE_PARAMS=new URLSearchParams('desktop_callback=http://localhost:1234/callback&desktop_state=state&desktop_handoff=post-v2');
   context.LEGACY_THEME_ALIASES={};context.SALES_OPEN=false;context.DEFAULT_THEME='Mature / Graphite';context.THEME_COLORS={'Mature / Graphite':{}};context.themeName=n=>n;context.showWrap=which=>s.wrap=which;
-  context.renderFeatures=()=>{};context.renderThemeSwatches=()=>{};context.loadOwnReview=()=>{};
+  context.renderFeatures=()=>{};context.renderThemeSwatches=()=>{};context.loadOwnReview=()=>{};context.loadTrial=()=>{};
   context.validatedDesktopCallback=()=>new URL('http://localhost:1234/callback');
   context.postDesktopSession=()=>s.handed++;
   vm.runInNewContext(source.slice(source.indexOf('async function refreshSession(){'),source.indexOf('// Server RPCs')),context);

@@ -140,9 +140,9 @@
       <div class="section-head">
         <div class="section-kicker">Plans</div>
         <h2>Pay only if it earns its place.</h2>
-        <p id="pricingNote">Paid plans start soon. Until then every feature is free - see the membership below.</p>
+        <p id="pricingNote">Paid plans open soon. Until then Jyson works on Free, and every account can take a free trial of every feature.</p>
       </div>
-      <div class="plans">
+      <div class="plans" id="plansGrid" hidden>
         <article class="plan">
           <h3>Monthly</h3>
           <div class="plan-price"><span data-price="monthly">2.49</span> <span data-currency>EUR</span><small>/ month</small></div>
@@ -162,7 +162,11 @@
           <p class="plan-left" id="lifetimeLeft"></p>
         </article>
       </div>
-      <p class="plans-trial" id="trialLine"></p>
+      <div class="plans-hold" id="plansHold">
+        <strong id="plansHoldTitle">Plans open soon.</strong>
+        <span id="plansHoldText">The prices go up here at launch. Until then: Jyson on Free, or every feature with a free trial.</span>
+      </div>
+      <p class="plans-trial" id="trialLine">Start on Free, or take a free 14-day trial from your account page - every feature, no card, and it ends by itself.</p>
     </div>
   </section>
 
@@ -185,8 +189,8 @@
         <div class="preflight-panel">
           <h3>Accounts</h3>
           <div class="fact-list">
-            <div class="fact"><div><strong>No account needed to try it.</strong> An account adds the release membership and synced appearance settings.</div></div>
-            <div class="fact"><div id="membershipFact"><strong>Free release membership.</strong> Every account made before 30 November 2027 gets all features free until that day. No card, nothing to pay, and it ends by itself.</div></div>
+            <div class="fact"><div><strong>No account needed to try it.</strong> An account adds the free trial and synced appearance settings.</div></div>
+            <div class="fact"><div id="membershipFact"><strong>Free trial.</strong> Every feature for 14 days, started from your account page when you want. No card, nothing to pay, and it ends by itself.</div></div>
             <div class="fact"><div><strong>The installer is not code-signed yet.</strong> Windows SmartScreen may warn the first time. Updates are checked with a signature before they install.</div></div>
           </div>
           <div class="notice">Download only from the official GitHub release linked on this page. See <a href="security.html#downloads">download security</a>.</div>
